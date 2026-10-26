@@ -1,0 +1,6 @@
+Delete these files from the previous version:
+  js/engine.js
+  tests/engine.test.js   (and the now-empty tests/ folder)
+
+Then install once:
+  python3 -m pip install -r backend/requirements.txt

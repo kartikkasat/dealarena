@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1F2A44">
+<title>DealArena: bid decision support (PoC)</title>
+<link rel="stylesheet" href="css/app.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231F2A44'/%3E%3Crect x='7' y='18' width='4' height='7' fill='%238C9AB3'/%3E%3Crect x='14' y='12' width='4' height='13' fill='%238C9AB3'/%3E%3Crect x='21' y='7' width='4' height='18' fill='%23ffffff'/%3E%3C/svg%3E">
+</head>
+<body>
+<noscript><p style="padding:20px">DealArena needs JavaScript.</p></noscript>
+<div id="app" v-cloak></div>
+
+<script type="text/x-template" id="num-field">
+  <label class="f" :title="hint || null">
+    <span class="f-l">{{ label }}<i v-if="hint" class="info" aria-hidden="true">i</i></span>
+    <span class="f-i">
+      <input type="number" inputmode="decimal" :min="min" :max="max" :step="step || 'any'" :value="modelValue"
+             :placeholder="placeholder" @change="emitVal" @keyup.enter="emitVal">
+      <em v-if="unit">{{ unit }}</em>
+    </span>
+  </label>
+</script>
+
+<script type="text/x-template" id="app-tpl">
+  <header class="top">
+    <div class="brand">
+      <svg width="22" height="22" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="6" fill="#33405E"/><rect x="7" y="18" width="4" height="7" fill="#8C9AB3"/><rect x="14" y="12" width="4" height="13" fill="#8C9AB3"/><rect x="21" y="7" width="4" height="18" fill="#fff"/></svg>
+      <b>DealArena</b><span class="muted hide-sm">Bid decision support. Rule-based simulation with adaptive rivals, not a trained MARL model.</span>
+    </div>
+    <div class="top-r">
+      <span class="status" :class="online ? 'on' : 'off'" :title="online ? 'Compute API reachable' : 'Start the backend: python3 serve.py'">{{ online ? 'Engine online' : 'Engine offline' }}</span>
+      <a class="lnk hide-sm" href="/docs" target="_blank" rel="noopener">API</a>
+      <button class="btn ghost" @click="resetExample">Reset</button>
+    </div>
+  </header>
+
+  <div class="shell">
+    <!-- ================================================ inputs -->
+    <aside class="side" ref="side" aria-label="Assumptions">
+      <div class="side-scroll" v-if="sc">
+        <details class="grp" open>
+          <summary>Deal</summary>
+          <num-field label="Standalone value" unit="EURm" v-model="sc.deal.standaloneValue" :min="1" hint="Enterprise value before synergies"></num-field>
+          <num-field label="EBITDA" unit="EURm" v-model="sc.deal.ebitda" :min="1" hint="Drives the private equity return maths"></num-field>
+          <num-field label="Value uncertainty" unit="%" v-model="sc.deal.valueUncertainty" :min="0" :max="60" hint="Higher means a stronger winner's curse"></num-field>
+          <label class="f"><span class="f-l">Auction format</span>
+            <span class="f-i"><select v-model="sc.deal.format"><option value="sealed">Sealed bid</option><option value="english">Ascending</option></select></span></label>
+          <num-field label="Synergies (PV)" unit="EURm" v-model="sc.acquirer.synergies" :min="0" hint="User assumption"></num-field>
+          <num-field label="Synergy realisation" unit="%" v-model="sc.acquirer.synergyRealisation" :min="0" :max="130" hint="Share of estimated synergies expected to be delivered"></num-field>
+          <num-field label="Compare a proposal" unit="EURm" :model-value="sc.acquirer.proposedBid" @update:model-value="v => sc.acquirer.proposedBid = v" :allow-empty="true" placeholder="optional" hint="Optional. The system generates its own bid; a proposal is only compared against it."></num-field>
+        </details>
+
+        <details class="grp">
+          <summary>Hard limits <span class="tag red">enforced</span></summary>
+          <num-field label="Board walk-away" unit="EURm" v-model="sc.limits.walkAway" :min="1"></num-field>
+          <num-field label="Committed financing" unit="EURm" v-model="sc.limits.financing" :min="1"></num-field>
+          <num-field label="Worst-5% loss limit" unit="EURm" v-model="sc.limits.maxTailLoss" :min="0" hint="Average loss in the worst 5% of wins must stay below this"></num-field>
+          <label class="sw"><span>Value if we win must be ≥ 0</span><input type="checkbox" v-model="sc.limits.requireNonNegativeNpv"></label>
+        </details>
+
+        <details class="grp">
+          <summary>Preferences <span class="tag blue">weighted</span></summary>
+          <div class="rng" v-for="w in weightDefs" :key="w.key" :title="w.hint">
+            <div class="rng-h"><span>{{ w.label }}</span><b>{{ sc.weights[w.key] }}%</b></div>
+            <input type="range" min="0" max="150" step="5" v-model.number="sc.weights[w.key]" :aria-label="w.label">
+          </div>
+          <num-field label="Strategic value" unit="EURm" v-model="sc.acquirer.strategicValue" :min="0" hint="User assumption, counted only if we win"></num-field>
+          <num-field label="Emotional value" unit="EURm" v-model="sc.acquirer.emotionalValue" :min="0" hint="User assumption: prestige, reputation"></num-field>
+        </details>
+
+        <details class="grp">
+          <summary>Rivals <span class="muted">{{ activeCompetitors }}</span></summary>
+          <label class="sw"><span>Rivals adapt to each other</span><input type="checkbox" v-model="sc.sim.adaptive"></label>
+          <div v-for="(c, i) in sc.competitors" :key="c.id" class="riv" :class="{off: !c.enabled}">
+            <div class="riv-h" @click="openComp = openComp === c.id ? null : c.id" role="button" tabindex="0" @keyup.enter="openComp = openComp === c.id ? null : c.id" :aria-expanded="openComp === c.id">
+              <span class="tag" :class="c.type === 'pe' ? 'violet' : 'grey'">{{ c.type === 'pe' ? 'PE' : 'Strategic' }}</span>
+              <span class="riv-n">{{ c.name }}</span>
+              <span v-if="compWarn(c.id)" class="dot red" title="Outside the calibrated range"></span>
+            </div>
+            <div v-if="openComp === c.id" class="riv-b">
+              <label class="f"><span class="f-l">Name</span><span class="f-i wide"><input type="text" v-model="c.name" maxlength="80"></span></label>
+              <label class="sw"><span>Included</span><input type="checkbox" v-model="c.enabled"></label>
+              <template v-if="c.type === 'strategic'">
+                <num-field label="Their synergies" unit="%" v-model="c.synergyPct"></num-field>
+                <num-field label="Financing limit" unit="EURm" v-model="c.financingLimit"></num-field>
+              </template>
+              <template v-else>
+                <num-field label="Target IRR" unit="%" v-model="c.targetIrr"></num-field>
+                <num-field label="Leverage" unit="x" v-model="c.leverage"></num-field>
+                <num-field label="Exit multiple" unit="x" v-model="c.exitMultiple"></num-field>
+                <num-field label="EBITDA uplift" unit="%" v-model="c.ebitdaUplift"></num-field>
+                <num-field label="Max equity" unit="EURm" v-model="c.maxEquity"></num-field>
+              </template>
+              <num-field label="Valuation noise" unit="%" v-model="c.signalNoise"></num-field>
+              <num-field v-if="sc.deal.format === 'sealed'" label="Bid / own value" unit="%" v-model="c.shading" :hint="sc.sim.adaptive ? 'Starting point; adaptive rivals find their own level' : 'Bid shading'"></num-field>
+              <num-field label="Fever probability" unit="%" v-model="c.feverProb"></num-field>
+              <num-field label="Observed bid" unit="EURm" :model-value="c.observedBid" @update:model-value="v => c.observedBid = v" :allow-empty="true" placeholder="optional"></num-field>
+              <button class="btn ghost sm danger" @click="sc.competitors.splice(i, 1)">Remove</button>
+            </div>
+          </div>
+          <div class="row-btns">
+            <button class="btn ghost sm" @click="addCompetitor('strategic')" :disabled="sc.competitors.length >= 6">+ Strategic</button>
+            <button class="btn ghost sm" @click="addCompetitor('pe')" :disabled="sc.competitors.length >= 6">+ PE sponsor</button>
+          </div>
+        </details>
+
+        <details class="grp">
+          <summary>Simulation</summary>
+          <num-field label="Simulated auctions" v-model="sc.sim.runs" :min="500" :max="50000" :step="500"></num-field>
+          <label class="sw"><span>Fresh random seed each run</span><input type="checkbox" v-model="sc.sim.randomSeed"></label>
+          <num-field v-if="!sc.sim.randomSeed" label="Fixed seed" v-model="sc.sim.seed" :min="0" hint="20261030 reproduces the sample case in the deck"></num-field>
+          <label class="sw"><span>Rerun when inputs change</span><input type="checkbox" v-model="autoRun"></label>
+        </details>
+      </div>
+      <div class="run">
+        <button class="btn primary" @click="runNow(true)" :disabled="!online" :aria-busy="running ? 'true' : 'false'"><span v-if="running" class="spin" aria-hidden="true"></span>{{ running ? 'Simulating' : 'Run simulation' }}</button>
+        <button class="btn ghost" @click="runStress" :disabled="!online || running || !result" title="Rerun with more aggressive rivals">Stress</button>
+      </div>
+    </aside>
+
+    <!-- ================================================ results -->
+    <main class="main" ref="main">
+      <div v-if="!online" class="note bad">The compute engine is not reachable. Start it with <code>python3 serve.py</code> in the project folder, then reload this page.</div>
+      <div v-if="errors.length" class="note bad" role="alert"><div v-for="e in errors" :key="e">{{ e }}</div></div>
+      <div v-if="online && !result && !errors.length" class="empty">Running the first simulation…</div>
+
+      <template v-if="result">
+        <section class="hero" :class="{flash: justRan}" aria-live="polite">
+          <div>
+            <div class="eyebrow">{{ plan ? 'System bid' : 'System decision' }}</div>
+            <h1 v-if="plan"><span class="cap">{{ plan.action }}</span> {{ eur(plan.bid) }}</h1>
+            <h1 v-else class="neg">Walk away</h1>
+            <p v-if="plan">Range {{ eur(plan.rangeLow) }} to {{ eur(plan.rangeHigh) }}. Never above <b>{{ eur(plan.neverAbove) }}</b>, set by {{ lower(plan.neverAboveReason) }}.</p>
+            <p v-else>No bid within the hard limits creates value under these inputs.</p>
+          </div>
+          <div class="meta">
+            <span class="chip" :class="'rel-' + result.reliability">{{ result.reliability }} reliability</span>
+            <span class="chip" :class="{blue: adaptiveOn}">{{ adaptiveOn ? 'Adaptive rivals' : 'Fixed-rule rivals' }}</span>
+            <span class="small" v-if="meta">Run {{ meta.runId.slice(-6) }}, seed {{ result.seed }}, {{ fmtInt(result.runs) }} auctions, {{ meta.durationMs }} ms · <a class="lnk" href="/api/model" target="_blank" rel="noopener" title="Rival model: rule-based, not trained or calibrated on deal data. Opens the model card.">model card</a></span>
+          </div>
+        </section>
+
+        <section class="stats" v-if="rec">
+          <div><span>Win chance</span><b>{{ pct(rec.pWin) }}</b></div>
+          <div><span>Value if we win</span><b :class="rec.expFvWin < 0 ? 'neg' : ''">{{ eurSigned(rec.expFvWin) }}</b></div>
+          <div><span>Expected value</span><b :class="rec.expFv < 0 ? 'neg' : ''">{{ eurSigned(rec.expFv) }}</b></div>
+          <div><span>Overpay chance if we win</span><b>{{ pct(rec.pOverWin) }}</b></div>
+          <div><span>Worst 5% if we win</span><b :class="rec.es5Win < 0 ? 'neg' : ''">{{ eurSigned(rec.es5Win) }}</b></div>
+        </section>
+
+        <div class="prop" v-if="result.proposed && th">
+          <span class="dot amber"></span>
+          <span>Proposal {{ eur(result.proposed.bid) }}:
+            <b :class="th.proposalGap > 0.5 ? 'neg' : 'pos'">{{ th.proposalGap > 0.5 ? eur(th.proposalGap) + ' above the maximum' : 'within the maximum' }}</b>.
+            Wins {{ pct(result.proposed.pWin) }}, {{ eurSigned(result.proposed.expFvWin) }} on average when it wins.</span>
+        </div>
+        <div class="prop" v-if="stress">
+          <span class="dot grey"></span>
+          <span>Stress test (more aggressive rivals): system bid {{ stress.bid ? eur(stress.bid) : 'walk away' }}<template v-if="stress.bid">, wins {{ pct(stress.pWin) }}</template>.</span>
+        </div>
+
+        <section class="card">
+          <div class="card-h"><h2>Decision limits</h2><span class="muted">Highest bid each hard limit allows, EURm. The shortest bar sets the maximum.</span></div>
+          <div class="ladder-wrap" ref="ladderWrap">
+            <svg v-if="ladder" :viewBox="'0 0 ' + ladder.w + ' ' + ladder.h" :height="ladder.h" class="ladder" role="img" :aria-label="'Maximum defensible bid ' + eur(th.ceiling)">
+              <g class="ax"><g v-for="t in ladder.ticks" :key="t.v"><line :x1="t.x" :x2="t.x" :y1="ladder.top - 4" :y2="ladder.bottom" stroke="#EDF0F4"/><text :x="t.x" :y="ladder.bottom + 15" text-anchor="middle">{{ t.label }}</text></g></g>
+              <rect :x="ladder.xCeil" :y="ladder.top - 4" :width="Math.max(0, ladder.right - ladder.xCeil)" :height="ladder.bottom - ladder.top + 4" fill="#FDF3F2"/>
+              <g v-for="r in ladder.rows" :key="r.key">
+                <rect :x="ladder.left" :y="r.y" :width="Math.max(2, r.x - ladder.left)" :height="ladder.barH" rx="3"
+                      :fill="r.ref ? 'none' : (r.binding ? '#B42318' : (r.active ? '#AEB9CA' : '#E3E7ED'))" :stroke="r.ref ? '#8A95A6' : 'none'" :stroke-dasharray="r.ref ? '4 3' : null"/>
+              </g>
+              <line :x1="ladder.xCeil" :x2="ladder.xCeil" :y1="ladder.top - 8" :y2="ladder.bottom" stroke="#B42318" stroke-width="2"/>
+              <g v-if="ladder.xRec !== null"><line :x1="ladder.xRec" :x2="ladder.xRec" :y1="ladder.top - 4" :y2="ladder.bottom + 24" stroke="#2459C4" stroke-width="2.5"/>
+                <text class="mk" :x="ladder.xRec" :y="ladder.bottom + 38" :text-anchor="ladder.anchor(ladder.xRec)" fill="#2459C4">System bid {{ eur(plan.bid) }}</text></g>
+              <g v-if="ladder.xProp !== null"><line :x1="ladder.xProp" :x2="ladder.xProp" :y1="ladder.top - 4" :y2="ladder.bottom + 40" stroke="#A86A12" stroke-width="2" stroke-dasharray="5 3"/>
+                <text class="mk" :x="ladder.xProp" :y="ladder.bottom + 54" :text-anchor="ladder.anchor(ladder.xProp)" fill="#A86A12">Proposal {{ eur(result.proposed.bid) }}</text></g>
+              <text class="mk" :x="ladder.xCeil" :y="ladder.top - 12" :text-anchor="ladder.anchor(ladder.xCeil)" fill="#8E1C13">Maximum {{ eur(th.ceiling) }}</text>
+              <g v-for="r in ladder.rows" :key="'t' + r.key">
+                <text class="rl" :class="{b: r.binding, off: !r.active}" :x="ladder.labelX" :y="r.labelY">{{ r.label }}</text>
+                <text class="rv" :class="{b: r.binding}" :x="r.x + 6" :y="r.y + ladder.barH / 2 + 4">{{ r.valueText }}</text>
+              </g>
+            </svg>
+          </div>
+          <div class="facts" v-if="th">
+            <div v-if="th.synergyRec"><span>Synergies needed at the system bid</span><b :class="th.synergyRec.share > th.assumedShare ? 'neg' : ''">{{ th.synergyRec.needed <= 0 ? 'none' : pct(th.synergyRec.share) }}</b><em>plan {{ pct(th.assumedShare) }}</em></div>
+            <div v-if="th.synergyProp"><span>Synergies needed at the proposal</span><b :class="th.synergyProp.share > th.assumedShare ? 'neg' : ''">{{ th.synergyProp.needed <= 0 ? 'none' : pct(th.synergyProp.share) }}</b><em>plan {{ pct(th.assumedShare) }}</em></div>
+            <div v-if="th.curseDiscount > 0 && th.floorMax < th.naiveBreakEven + 1"><span>Winner's curse discount</span><b>{{ eur(th.curseDiscount) }}</b><em>below simple break-even {{ eur(th.naiveBreakEven) }}</em></div>
+          </div>
+        </section>
+
+        <section class="warns" v-if="result.warnings.length">
+          <div v-for="(w, i) in result.warnings" :key="i" class="w" :class="w.level" :title="w.detail">
+            <span class="dot" :class="{red: w.level === 'high', amber: w.level === 'medium', navy: w.level === 'limit', grey: w.level === 'info'}"></span>
+            <span><b>{{ w.title }}</b> <span class="muted">{{ w.detail }}</span></span>
+          </div>
+        </section>
+
+        <nav class="tabs" role="tablist">
+          <button v-for="t in tabs" :key="t" role="tab" :aria-selected="tab === t" @click="tab = t">{{ t }}</button>
+        </nav>
+
+        <section v-show="tab === 'Rivals'" class="card">
+          <div class="card-h"><h2>Where rival bids land</h2><span class="muted">Bars: middle 90% of simulated bids; tick: median.</span></div>
+          <div class="ruler-wrap" ref="rulerWrap">
+            <svg v-if="ruler" :viewBox="'0 0 ' + ruler.w + ' ' + ruler.h" :height="ruler.h" class="ladder">
+              <g class="ax"><g v-for="t in ruler.ticks" :key="t.v"><line :x1="t.x" :x2="t.x" :y1="ruler.top - 4" :y2="ruler.bottom" stroke="#EDF0F4"/><text :x="t.x" :y="ruler.bottom + 15" text-anchor="middle">{{ t.label }}</text></g></g>
+              <g v-for="r in ruler.rows" :key="r.id">
+                <line :x1="r.x025" :x2="r.x975" :y1="r.y" :y2="r.y" stroke="#D5DBE4" stroke-width="2"/>
+                <rect :x="r.x5" :y="r.y - 6" :width="Math.max(2, r.x95 - r.x5)" height="12" rx="3" fill="#AEB9CA"/>
+                <line :x1="r.x50" :x2="r.x50" :y1="r.y - 8" :y2="r.y + 8" stroke="#1F2A44" stroke-width="2"/>
+                <path v-if="r.xObs !== null" :d="'M' + r.xObs + ' ' + (r.y - 7) + ' l6 7 l-6 7 l-6 -7 z'" :fill="r.obsOut ? '#B42318' : '#18202E'"/>
+              </g>
+              <line v-if="ruler.xRec !== null" :x1="ruler.xRec" :x2="ruler.xRec" :y1="ruler.top - 6" :y2="ruler.bottom" stroke="#2459C4" stroke-width="2.5"/>
+              <line :x1="ruler.xCeil" :x2="ruler.xCeil" :y1="ruler.top - 6" :y2="ruler.bottom" stroke="#B42318" stroke-width="2"/>
+              <g v-for="r in ruler.rows" :key="'t' + r.id"><text class="rl" :x="ruler.labelX" :y="r.labelY">{{ r.name }}</text></g>
+            </svg>
+          </div>
+          <template v-if="ad">
+            <div class="card-h sub"><h2>Rivals that adapt</h2><span class="muted">{{ adStatus }}</span></div>
+            <table class="tbl">
+              <thead><tr><th></th><th>Fixed rules</th><th>Adaptive</th></tr></thead>
+              <tbody>
+                <tr class="strong"><td>System bid</td><td>{{ ad.before.ourBid ? eur(ad.before.ourBid) : 'Walk away' }}</td><td>{{ ad.after.ourBid ? eur(ad.after.ourBid) : 'Walk away' }}</td></tr>
+                <tr class="strong"><td>Our win chance</td><td>{{ pct(ad.before.ourPWin) }}</td><td>{{ pct(ad.after.ourPWin) }}</td></tr>
+                <tr v-for="(rv, i) in ad.before.rivals" :key="rv.id"><td>{{ rv.name }}</td>
+                  <td>bids {{ fmtInt(rv.shading * 100) }}%, profit <span :class="rv.profit < 0 ? 'neg' : ''">{{ eurSigned(rv.profit) }}</span></td>
+                  <td>bids {{ fmtInt(ad.after.rivals[i].shading * 100) }}%, profit <span :class="ad.after.rivals[i].profit < 0 ? 'neg' : ''">{{ eurSigned(ad.after.rivals[i].profit) }}</span></td></tr>
+              </tbody>
+            </table>
+          </template>
+        </section>
+
+        <section v-show="tab === 'Strategies'" class="card">
+          <div class="card-h"><h2>Strategies on the same simulated auctions</h2></div>
+          <div class="scroll-x">
+            <table class="tbl num">
+              <thead><tr><th>Strategy</th><th>Bid</th><th>Win</th><th>Value if win</th><th>Expected</th><th>Worst 5%</th><th>Limits</th></tr></thead>
+              <tbody>
+                <tr v-for="s in result.strategies" :key="s.label" :class="{hl: s.label === 'System bid'}">
+                  <td :title="s.desc">{{ s.label }}</td><td>{{ s.walkAway ? '' : eur(s.bid) }}</td><td>{{ pct(s.pWin) }}</td>
+                  <td :class="s.expFvWin < 0 ? 'neg' : ''">{{ s.walkAway ? '' : eurSigned(s.expFvWin) }}</td>
+                  <td :class="s.expFv < 0 ? 'neg' : ''">{{ eurSigned(s.expFv) }}</td><td>{{ s.walkAway ? '' : eurSigned(s.es5Win) }}</td>
+                  <td><span v-if="s.feasible" class="pos">ok</span><span v-else class="neg" :title="s.violations.join('; ')">breach</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section v-show="tab === 'Risk'" class="card">
+          <div class="grid2">
+            <div><div class="card-h"><h2>Winning versus value</h2><span class="muted">By candidate bid</span></div><div class="chart"><canvas ref="curveChart"></canvas></div></div>
+            <div><div class="card-h"><h2>Value if we win</h2><span class="muted">Share of winning auctions, EURm</span></div><div class="chart"><canvas ref="histChart"></canvas></div></div>
+          </div>
+        </section>
+
+        <section v-show="tab === 'Run log'" class="card">
+          <div class="card-h"><h2>Run log</h2><span class="muted">Stored by the server in logs/runs.jsonl</span>
+            <a class="btn ghost sm" href="/api/runs.csv" download>Export CSV</a></div>
+          <div class="decide" v-if="meta">
+            <template v-if="currentDecision">
+              <span class="chip" :class="currentDecision.decision === 'approved' ? 'rel-High' : 'rel-Low'">{{ currentDecision.decision === 'approved' ? 'Approved' : 'Rejected' }}</span>
+              <span>Run {{ meta.runId.slice(-6) }}: {{ currentDecision.decision }} by <b>{{ currentDecision.approver }}</b>, {{ timeOf(currentDecision.decidedAt) }}<template v-if="currentDecision.bid">, bid {{ eur(currentDecision.bid) }}</template>. Decisions cannot be changed.</span>
+            </template>
+            <template v-else-if="meta.kind === 'stress'"><span class="muted">Stress runs are scenarios; record decisions on a base run.</span></template>
+            <template v-else>
+              <span class="lbl">Committee decision on run {{ meta.runId.slice(-6) }}</span>
+              <input class="inp" v-model.trim="approver" placeholder="Approver name" maxlength="80" aria-label="Approver name">
+              <input class="inp grow" v-model.trim="decisionNote" placeholder="Note (optional)" maxlength="300" aria-label="Decision note">
+              <button class="btn ghost sm" @click="decide('approved')" :disabled="!plan || approver.length < 2">Approve bid</button>
+              <button class="btn ghost sm" @click="decide('rejected')" :disabled="approver.length < 2">Reject</button>
+            </template>
+          </div>
+          <div class="scroll-x">
+            <table class="tbl num log">
+              <thead><tr><th>Run</th><th>Time</th><th>Type</th><th>Seed</th><th>System bid</th><th>Win</th><th>Max bid</th><th>Decision</th><th>Changes</th><th></th></tr></thead>
+              <tbody>
+                <tr v-for="l in runs" :key="l.runId" :class="{hl: meta && l.runId === meta.runId}">
+                  <td>{{ l.runId.slice(-6) }}</td><td>{{ timeOf(l.createdAt) }}</td><td>{{ l.kind }}</td><td>{{ l.seed }}</td>
+                  <td>{{ l.systemBid ? eur(l.systemBid) : 'walk away' }}</td><td>{{ l.pWin === null ? '' : pct(l.pWin) }}</td><td>{{ eur(l.maxBid) }}</td>
+                  <td class="txt dec">{{ l.decision ? (l.decision.decision === 'approved' ? 'Approved' : 'Rejected') + ', ' + l.decision.approver : '' }}</td>
+                  <td class="txt">{{ l.changes }}</td>
+                  <td class="acts"><button class="btn ghost sm" @click="replay(l.runId)" :disabled="running">Replay</button><a class="lnk" :href="'/api/runs/' + l.runId" target="_blank" rel="noopener">JSON</a></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <p class="foot">Hypothetical data. The system proposes the bid; a named deal committee decides and the decision is logged. Rivals follow rules, not a trained model. Strategic and emotional values are user assumptions, reported separately from financial value.</p>
+      </template>
+    </main>
+  </div>
+  <div v-if="toast" class="toast" role="status" aria-live="polite">{{ toast }}</div>
+</script>
+
+<script src="vendor/vue.global.prod.js"></script>
+<script src="vendor/chart.umd.min.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,92 @@
+{"ts": "2026-10-26T16:03:24.354+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/health", "status": 200, "ms": 1.6}
+{"ts": "2026-10-26T16:03:24.440+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/scenario/default", "status": 200, "ms": 1.2}
+{"ts": "2026-10-26T16:03:24.802+00:00", "level": "INFO", "logger": "dealarena", "msg": "simulation", "runId": "20261026-160324-69f227", "kind": "simulate", "seed": 365985002, "runs": 10000, "systemBid": 1000.0, "pWin": 0.2924, "maxBid": 1119.39697265625, "durationMs": 210, "warnings": 1}
+{"ts": "2026-10-26T16:03:24.802+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "POST", "path": "/api/simulate", "status": 200, "ms": 215.1}
+{"ts": "2026-10-26T16:03:24.807+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/runs", "status": 200, "ms": 1.1}
+{"ts": "2026-10-26T16:03:35.238+00:00", "level": "INFO", "logger": "dealarena", "msg": "simulation", "runId": "20261026-160335-2663e4", "kind": "simulate", "seed": 338834252, "runs": 10000, "systemBid": 991.2666666666667, "pWin": 0.5685, "maxBid": 1140.05859375, "durationMs": 211, "warnings": 1}
+{"ts": "2026-10-26T16:03:35.239+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "POST", "path": "/api/simulate", "status": 200, "ms": 215.2}
+{"ts": "2026-10-26T16:03:35.245+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/runs", "status": 200, "ms": 0.5}
+{"ts": "2026-10-26T16:03:39.360+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/health", "status": 200, "ms": 1.9}
+{"ts": "2026-10-26T16:03:50.866+00:00", "level": "INFO", "logger": "dealarena", "msg": "simulation", "runId": "20261026-160350-88d287", "kind": "simulate", "seed": 512578795, "runs": 10000, "systemBid": 991.2666666666667, "pWin": 0.5808, "maxBid": 1143.819580078125, "durationMs": 192, "warnings": 1}
+{"ts": "2026-10-26T16:03:50.867+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "POST", "path": "/api/simulate", "status": 200, "ms": 195.2}
+{"ts": "2026-10-26T16:03:50.970+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/runs", "status": 200, "ms": 0.7}
+{"ts": "2026-10-26T16:03:54.354+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/health", "status": 200, "ms": 1.3}
+{"ts": "2026-10-26T16:04:02.369+00:00", "level": "INFO", "logger": "dealarena", "msg": "simulation", "runId": "20261026-160402-b47b3d", "kind": "simulate", "seed": 810262868, "runs": 10000, "systemBid": null, "pWin": null, "maxBid": 1200.0, "durationMs": 156, "warnings": 2}
+{"ts": "2026-10-26T16:04:02.369+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "POST", "path": "/api/simulate", "status": 200, "ms": 160.7}
+{"ts": "2026-10-26T16:04:02.377+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/runs", "status": 200, "ms": 0.5}
+{"ts": "2026-10-26T16:04:06.648+00:00", "level": "INFO", "logger": "dealarena", "msg": "simulation", "runId": "20261026-160406-1c93ed", "kind": "simulate", "seed": 408898107, "runs": 10000, "systemBid": null, "pWin": null, "maxBid": 1200.0, "durationMs": 104, "warnings": 2}
+{"ts": "2026-10-26T16:04:06.648+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "POST", "path": "/api/simulate", "status": 200, "ms": 107.3}
+{"ts": "2026-10-26T16:04:06.656+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/runs", "status": 200, "ms": 0.5}
+{"ts": "2026-10-26T16:04:09.359+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/health", "status": 200, "ms": 2.2}
+{"ts": "2026-10-26T16:04:09.411+00:00", "level": "INFO", "logger": "dealarena", "msg": "simulation", "runId": "20261026-160409-bd05ef", "kind": "simulate", "seed": 677079151, "runs": 1000, "systemBid": null, "pWin": null, "maxBid": 1200.0, "durationMs": 34, "warnings": 2}
+{"ts": "2026-10-26T16:04:09.412+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "POST", "path": "/api/simulate", "status": 200, "ms": 39.5}
+{"ts": "2026-10-26T16:04:09.423+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/runs", "status": 200, "ms": 1.4}
+{"ts": "2026-10-26T16:04:12.080+00:00", "level": "INFO", "logger": "dealarena", "msg": "simulation", "runId": "20261026-160412-3db8e1", "kind": "simulate", "seed": 693827205, "runs": 1000, "systemBid": null, "pWin": null, "maxBid": 1200.0, "durationMs": 32, "warnings": 2}
+{"ts": "2026-10-26T16:04:12.081+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "POST", "path": "/api/simulate", "status": 200, "ms": 39.5}
+{"ts": "2026-10-26T16:04:12.091+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/runs", "status": 200, "ms": 1.0}
+{"ts": "2026-10-26T16:04:15.388+00:00", "level": "INFO", "logger": "dealarena", "msg": "simulation", "runId": "20261026-160415-05952f", "kind": "simulate", "seed": 584748070, "runs": 1000, "systemBid": null, "pWin": null, "maxBid": 1200.0, "durationMs": 19, "warnings": 3}
+{"ts": "2026-10-26T16:04:15.389+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "POST", "path": "/api/simulate", "status": 200, "ms": 23.6}
+{"ts": "2026-10-26T16:04:15.395+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/runs", "status": 200, "ms": 1.3}
+{"ts": "2026-10-26T16:04:22.905+00:00", "level": "INFO", "logger": "dealarena", "msg": "simulation", "runId": "20261026-160422-b68328", "kind": "simulate", "seed": 597284602, "runs": 1000, "systemBid": null, "pWin": null, "maxBid": 1200.0, "durationMs": 33, "warnings": 3}
+{"ts": "2026-10-26T16:04:22.906+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "POST", "path": "/api/simulate", "status": 200, "ms": 36.1}
+{"ts": "2026-10-26T16:04:23.177+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/runs", "status": 200, "ms": 2.2}
+{"ts": "2026-10-26T16:04:24.359+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/health", "status": 200, "ms": 1.9}
+{"ts": "2026-10-26T16:04:40.117+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/health", "status": 200, "ms": 1.7}
+{"ts": "2026-10-26T16:04:55.167+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/health", "status": 200, "ms": 1.5}
+{"ts": "2026-10-26T16:05:10.168+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/health", "status": 200, "ms": 1.7}
+{"ts": "2026-10-26T16:05:25.166+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/health", "status": 200, "ms": 2.1}
+{"ts": "2026-10-26T16:06:22.211+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/health", "status": 200, "ms": 1.8}
+{"ts": "2026-10-26T16:06:23.549+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/health", "status": 200, "ms": 5.6}
+{"ts": "2026-10-26T16:06:23.606+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/scenario/default", "status": 200, "ms": 2.6}
+{"ts": "2026-10-26T16:06:23.877+00:00", "level": "INFO", "logger": "dealarena", "msg": "simulation", "runId": "20261026-160623-f48990", "kind": "simulate", "seed": 245930889, "runs": 10000, "systemBid": 1011.4, "pWin": 0.3239, "maxBid": 1121.539306640625, "durationMs": 194, "warnings": 1}
+{"ts": "2026-10-26T16:06:23.878+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "POST", "path": "/api/simulate", "status": 200, "ms": 200.7}
+{"ts": "2026-10-26T16:06:23.883+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/runs", "status": 200, "ms": 0.7}
+{"ts": "2026-10-26T16:06:29.060+00:00", "level": "INFO", "logger": "dealarena", "msg": "simulation", "runId": "20261026-160629-a7ac0c", "kind": "simulate", "seed": 49599514, "runs": 10000, "systemBid": 991.2666666666667, "pWin": 0.2601, "maxBid": 1117.96875, "durationMs": 206, "warnings": 1}
+{"ts": "2026-10-26T16:06:29.061+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "POST", "path": "/api/simulate", "status": 200, "ms": 212.6}
+{"ts": "2026-10-26T16:06:29.070+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/runs", "status": 200, "ms": 0.6}
+{"ts": "2026-10-26T16:06:29.959+00:00", "level": "INFO", "logger": "dealarena", "msg": "simulation", "runId": "20261026-160629-2e96ef", "kind": "simulate", "seed": 932641313, "runs": 10000, "systemBid": 1011.4, "pWin": 0.332, "maxBid": 1118.5400390625, "durationMs": 210, "warnings": 2}
+{"ts": "2026-10-26T16:06:29.960+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "POST", "path": "/api/simulate", "status": 200, "ms": 214.1}
+{"ts": "2026-10-26T16:06:29.967+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/runs", "status": 200, "ms": 0.6}
+{"ts": "2026-10-26T16:06:31.358+00:00", "level": "INFO", "logger": "dealarena", "msg": "simulation", "runId": "20261026-160631-9ee486", "kind": "simulate", "seed": 371643642, "runs": 10000, "systemBid": 1031.5333333333333, "pWin": 0.3947, "maxBid": 1121.49169921875, "durationMs": 227, "warnings": 2}
+{"ts": "2026-10-26T16:06:31.359+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "POST", "path": "/api/simulate", "status": 200, "ms": 231.3}
+{"ts": "2026-10-26T16:06:31.371+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/runs", "status": 200, "ms": 0.5}
+{"ts": "2026-10-26T16:06:32.780+00:00", "level": "INFO", "logger": "dealarena", "msg": "simulation", "runId": "20261026-160632-49fea2", "kind": "simulate", "seed": 460042963, "runs": 10000, "systemBid": 1041.6, "pWin": 0.4365, "maxBid": 1122.015380859375, "durationMs": 250, "warnings": 2}
+{"ts": "2026-10-26T16:06:32.781+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "POST", "path": "/api/simulate", "status": 200, "ms": 254.3}
+{"ts": "2026-10-26T16:06:32.792+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/runs", "status": 200, "ms": 0.7}
+{"ts": "2026-10-26T16:06:37.036+00:00", "level": "INFO", "logger": "dealarena", "msg": "simulation", "runId": "20261026-160637-71a488", "kind": "simulate", "seed": 807300620, "runs": 10000, "systemBid": 1061.7333333333333, "pWin": 0.5018, "maxBid": 1122.3486328125, "durationMs": 225, "warnings": 2}
+{"ts": "2026-10-26T16:06:37.037+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "POST", "path": "/api/simulate", "status": 200, "ms": 228.6}
+{"ts": "2026-10-26T16:06:37.045+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/runs", "status": 200, "ms": 0.5}
+{"ts": "2026-10-26T16:06:38.547+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/health", "status": 200, "ms": 1.5}
+{"ts": "2026-10-26T16:06:42.243+00:00", "level": "INFO", "logger": "dealarena", "msg": "simulation", "runId": "20261026-160642-2817ab", "kind": "simulate", "seed": 435912653, "runs": 10000, "systemBid": 1071.8, "pWin": 0.5553, "maxBid": 1119.873046875, "durationMs": 206, "warnings": 2}
+{"ts": "2026-10-26T16:06:42.244+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "POST", "path": "/api/simulate", "status": 200, "ms": 209.3}
+{"ts": "2026-10-26T16:06:42.339+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/runs", "status": 200, "ms": 0.9}
+{"ts": "2026-10-26T16:06:42.742+00:00", "level": "INFO", "logger": "dealarena", "msg": "simulation", "runId": "20261026-160642-bd70e9", "kind": "simulate", "seed": 738614135, "runs": 10000, "systemBid": 1081.8666666666668, "pWin": 0.5805, "maxBid": 1119.825439453125, "durationMs": 198, "warnings": 2}
+{"ts": "2026-10-26T16:06:42.743+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "POST", "path": "/api/simulate", "status": 200, "ms": 201.6}
+{"ts": "2026-10-26T16:06:42.752+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/runs", "status": 200, "ms": 0.6}
+{"ts": "2026-10-26T16:06:46.354+00:00", "level": "INFO", "logger": "dealarena", "msg": "simulation", "runId": "20261026-160646-71a46d", "kind": "simulate", "seed": 304623096, "runs": 10000, "systemBid": 1041.6, "pWin": 0.4438, "maxBid": 1120.4443359375, "durationMs": 205, "warnings": 2}
+{"ts": "2026-10-26T16:06:46.355+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "POST", "path": "/api/simulate", "status": 200, "ms": 209.0}
+{"ts": "2026-10-26T16:06:46.364+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/runs", "status": 200, "ms": 0.6}
+{"ts": "2026-10-26T16:06:48.099+00:00", "level": "INFO", "logger": "dealarena", "msg": "simulation", "runId": "20261026-160648-d4bce8", "kind": "simulate", "seed": 771428, "runs": 10000, "systemBid": 1041.6, "pWin": 0.4408, "maxBid": 1118.778076171875, "durationMs": 207, "warnings": 2}
+{"ts": "2026-10-26T16:06:48.101+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "POST", "path": "/api/simulate", "status": 200, "ms": 211.7}
+{"ts": "2026-10-26T16:06:48.189+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/runs", "status": 200, "ms": 0.8}
+{"ts": "2026-10-26T16:06:54.089+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/health", "status": 200, "ms": 1.3}
+{"ts": "2026-10-26T16:07:09.146+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/health", "status": 200, "ms": 1.7}
+{"ts": "2026-10-26T16:07:24.069+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/health", "status": 200, "ms": 1.2}
+{"ts": "2026-10-26T16:07:39.099+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/health", "status": 200, "ms": 1.0}
+{"ts": "2026-10-26T16:07:54.160+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/health", "status": 200, "ms": 2.3}
+{"ts": "2026-10-26T16:08:49.766+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/health", "status": 200, "ms": 0.9}
+{"ts": "2026-10-26T16:08:54.078+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/health", "status": 200, "ms": 0.9}
+{"ts": "2026-10-26T16:09:09.164+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/health", "status": 200, "ms": 2.0}
+{"ts": "2026-10-26T16:09:24.152+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/health", "status": 200, "ms": 1.0}
+{"ts": "2026-10-26T16:09:39.169+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/health", "status": 200, "ms": 1.9}
+{"ts": "2026-10-26T16:09:59.115+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/health", "status": 200, "ms": 1.6}
+{"ts": "2026-10-26T16:10:59.145+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/health", "status": 200, "ms": 2.5}
+{"ts": "2026-10-26T16:11:59.103+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/health", "status": 200, "ms": 2.1}
+{"ts": "2026-10-26T16:12:59.080+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/health", "status": 200, "ms": 3.5}
+{"ts": "2026-10-26T16:13:59.132+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/health", "status": 200, "ms": 1.4}
+{"ts": "2026-10-26T16:14:59.167+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/health", "status": 200, "ms": 1.6}
+{"ts": "2026-10-26T16:15:59.156+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/health", "status": 200, "ms": 2.1}
+{"ts": "2026-10-26T16:16:59.160+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/health", "status": 200, "ms": 1.4}
+{"ts": "2026-10-26T16:17:59.162+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/health", "status": 200, "ms": 2.8}
+{"ts": "2026-10-26T16:18:59.171+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/health", "status": 200, "ms": 2.1}
+{"ts": "2026-10-26T16:19:48.064+00:00", "level": "INFO", "logger": "dealarena", "msg": "request", "method": "GET", "path": "/api/health", "status": 200, "ms": 3.9}
