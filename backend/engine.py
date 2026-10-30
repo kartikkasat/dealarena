@@ -584,7 +584,7 @@ def run(scenario: dict, seed: int | None = None) -> dict:
         warn("medium", "High valuation uncertainty",
              "Standalone value uncertainty of %g%% widens the winner's curse; diligence should narrow it before bidding." % d["valueUncertainty"])
     if proposed and not proposed["feasible"]:
-        warn("limit", "Deal team proposal breaches a hard limit",
+        warn("limit", "Deal team proposal exceeds an approval boundary",
              "Proposed bid EUR %dm: %s." % (js_round(prop), ", ".join(proposed["violations"])))
     if rec:
         p = rec["parts"]

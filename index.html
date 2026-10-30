@@ -54,10 +54,10 @@
         </details>
 
         <details class="grp">
-          <summary>Hard limits <span class="tag red">enforced</span></summary>
+          <summary>Guardrails <span class="tag red">enforced</span></summary>
           <num-field label="Board walk-away" unit="EURm" v-model="sc.limits.walkAway" :min="1" hint="Maximum bid approved by the board. The engine never recommends above this."></num-field>
           <num-field label="Committed financing" unit="EURm" v-model="sc.limits.financing" :min="1" hint="Cash plus committed debt available for the bid. Hard ceiling."></num-field>
-          <num-field label="Worst-5% loss limit" unit="EURm" v-model="sc.limits.maxTailLoss" :min="0" hint="Average loss in the worst 5% of wins must stay below this"></num-field>
+          <num-field label="Worst 5% loss tolerance" unit="EURm" v-model="sc.limits.maxTailLoss" :min="0" hint="Average loss in the worst 5% of wins must stay below this"></num-field>
           <label class="sw"><span>Value if we win must be ≥ 0</span><input type="checkbox" v-model="sc.limits.requireNonNegativeNpv"></label>
         </details>
 
@@ -137,7 +137,11 @@
             <h1 v-if="plan"><span class="cap">{{ plan.action }}</span> {{ eur(plan.bid) }}</h1>
             <h1 v-else class="neg">Walk away</h1>
             <p v-if="plan">Wins <b>{{ pct(rec.pWin) }}</b> of simulated auctions; when it wins, creates <b>{{ eurSigned(rec.expFvWin) }}</b> on average. Bids {{ eur(plan.rangeLow) }}–{{ eur(plan.rangeHigh) }} score within statistical noise. Ceiling <b>{{ eur(plan.neverAbove) }}</b>: above this, the winner's curse wipes out the synergies.</p>
-            <p v-else>No bid within the hard limits creates value under these inputs.</p>
+            <template v-else>
+              <p v-if="walkAwayDiagnostic" class="story"><b>{{ walkAwayDiagnostic.headline }}</b></p>
+              <p v-if="walkAwayDiagnostic" class="small">{{ walkAwayDiagnostic.detail }}</p>
+              <p v-else class="story">No bid within your approval boundaries creates value under these inputs.</p>
+            </template>
             <p class="story" v-if="view === 'summary' && plan">{{ story }}</p>
           </div>
           <div class="meta">
@@ -169,7 +173,7 @@
         </section>
 
         <section class="card" v-if="view === 'analysis'">
-          <div class="card-h"><h2>Decision limits</h2><span class="muted">Highest bid each hard limit allows, EURm. The shortest bar sets the maximum.</span></div>
+          <div class="card-h"><h2>How far each guardrail reaches</h2><span class="muted">Highest bid each hard limit allows, EURm. The shortest bar sets the maximum.</span></div>
           <div class="ladder-wrap" ref="ladderWrap">
             <svg v-if="ladder" :viewBox="'0 0 ' + ladder.w + ' ' + ladder.h" :height="ladder.h" class="ladder" role="img" :aria-label="'Maximum defensible bid ' + eur(th.ceiling)">
               <g class="ax"><g v-for="t in ladder.ticks" :key="t.v"><line :x1="t.x" :x2="t.x" :y1="ladder.top - 4" :y2="ladder.bottom" stroke="#EDF0F4"/><text :x="t.x" :y="ladder.bottom + 15" text-anchor="middle">{{ t.label }}</text></g></g>

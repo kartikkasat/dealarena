@@ -87,6 +87,39 @@
     },
     computed: {
       rec: function () { return this.result ? this.result.recommendation : null; },
+      walkAwayDiagnostic: function () {
+        if (!this.result || !this.result.walkAwayRecommended) return null;
+        var r = this.result, th = r.thresholds, best = null;
+        for (var i = 0; i < r.curve.length; i++) {
+          if (r.curve[i].feasible && (!best || r.curve[i].utility > best.utility)) best = r.curve[i];
+        }
+        if (!best) {
+          return {
+            case: 'no-feasible',
+            headline: 'No bid you could submit clears an approval boundary.',
+            detail: 'Every candidate bid exceeds one of the guardrails below. Loosen one, or accept this target is out of range at the current approval.'
+          };
+        }
+        if (best.pWin < 0.005) {
+          return {
+            case: 'cannot-win',
+            headline: 'Rivals will pay more than you can approve.',
+            detail: 'Your ceiling of ' + this.eur(th.ceiling) + ' sits below the winning bid in every simulated auction. The best bid you can approve (' + this.eur(best.bid) + ') never wins. Raise the board maximum above ' + this.eur(th.ceiling) + ' to compete, or accept that this target is out of reach at the current approval.'
+          };
+        }
+        if (best.expFvWin < 0) {
+          return {
+            case: 'negative-value',
+            headline: 'Any bid you could approve would overpay on average.',
+            detail: 'The best feasible bid, ' + this.eur(best.bid) + ', wins ' + this.pct(best.pWin) + ' of the time but loses ' + this.eurSigned(-best.expFvWin) + ' each time it wins. The winner\'s curse exceeds your synergies at this price.'
+          };
+        }
+        return {
+          case: 'utility-negative',
+          headline: 'Value is positive, but risk-weighted score stays below zero.',
+          detail: 'The best feasible bid, ' + this.eur(best.bid) + ', creates ' + this.eurSigned(best.expFvWin) + ' per win, but after the risk penalty (weight ' + this.sc.weights.risk + '%) the total score is ' + best.utility.toFixed(1) + '. Reduce the risk weight, raise the loss tolerance, or accept walk-away.'
+        };
+      },
       shownWarns: function () { var w = this.result ? this.result.warnings : []; return this.view === 'analysis' ? w : w.filter(function (x) { return x.level === 'high'; }); },
       story: function () {
         var p = this.plan, r = this.rec, th = this.th, pr = this.result && this.result.proposed, self = this;
