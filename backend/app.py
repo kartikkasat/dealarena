@@ -194,3 +194,8 @@ for _d in ("css", "js", "fonts", "vendor"):
 @app.get("/", include_in_schema=False)
 def index():
     return FileResponse(ROOT / "index.html", media_type="text/html")
+
+
+@app.get("/documentation", include_in_schema=False)
+def documentation():
+    return FileResponse(ROOT / "documentation.html", media_type="text/html")

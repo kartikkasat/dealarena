@@ -32,6 +32,7 @@
     <div class="top-r">
       <span class="status" :class="online ? 'on' : 'off'" :title="online ? 'Compute API reachable' : 'Start the backend: python3 serve.py'">{{ online ? 'Engine online' : 'Engine offline' }}</span>
       <a class="lnk hide-sm" href="/docs" target="_blank" rel="noopener">API</a>
+      <a class="lnk hide-sm" href="/documentation" target="_blank" rel="noopener">Documentation</a>
       <button class="btn ghost" @click="resetExample">Reset</button>
     </div>
   </header>
@@ -135,7 +136,7 @@
             <div class="eyebrow">{{ plan ? 'System bid' : 'System decision' }}</div>
             <h1 v-if="plan"><span class="cap">{{ plan.action }}</span> {{ eur(plan.bid) }}</h1>
             <h1 v-else class="neg">Walk away</h1>
-            <p v-if="plan">Range {{ eur(plan.rangeLow) }} to {{ eur(plan.rangeHigh) }}. Never above <b>{{ eur(plan.neverAbove) }}</b>, set by {{ lower(plan.neverAboveReason) }}.</p>
+            <p v-if="plan">Wins <b>{{ pct(rec.pWin) }}</b> of simulated auctions; when it wins, creates <b>{{ eurSigned(rec.expFvWin) }}</b> on average. Bids {{ eur(plan.rangeLow) }}–{{ eur(plan.rangeHigh) }} score within statistical noise. Ceiling <b>{{ eur(plan.neverAbove) }}</b>: above this, the winner's curse wipes out the synergies.</p>
             <p v-else>No bid within the hard limits creates value under these inputs.</p>
             <p class="story" v-if="view === 'summary' && plan">{{ story }}</p>
           </div>

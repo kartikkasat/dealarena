@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DealArena — Documentation</title>
+<style>
+  :root {
+    --navy: #1F2A44; --ink-1: #1A2332; --ink-2: #4A5568; --ink-3: #6B7280;
+    --rule: #E5E7EB; --bg: #F9FAFB; --blue: #2459C4; --red: #B42318;
+    --green: #2F6B4F; --amber: #A86A12; --code-bg: #F3F4F6;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: 'Plex', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    color: var(--ink-1); background: var(--bg); line-height: 1.6;
+    -webkit-font-smoothing: antialiased; font-size: 15px;
+  }
+  header {
+    background: var(--navy); color: #fff; padding: 14px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+  }
+  header b { font-size: 15px; letter-spacing: -0.01em; }
+  header a { color: #C5D0E5; text-decoration: none; font-size: 13px; }
+  header a:hover { color: #fff; }
+  .layout { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 32px;
+            max-width: 1100px; margin: 0 auto; padding: 32px 24px 80px; }
+  aside.toc { position: sticky; top: 72px; align-self: start; font-size: 13px; line-height: 1.9; }
+  aside.toc h4 { font-size: 11px; font-weight: 700; letter-spacing: .06em;
+                 text-transform: uppercase; color: var(--ink-3); margin: 0 0 8px; }
+  aside.toc a { display: block; color: var(--ink-2); text-decoration: none;
+                padding: 2px 0 2px 10px; border-left: 2px solid transparent; }
+  aside.toc a:hover { color: var(--blue); border-left-color: var(--blue); }
+  aside.toc a.sub { padding-left: 22px; font-size: 12.5px; }
+  main { min-width: 0; }
+  h1 { font-size: 28px; letter-spacing: -.02em; margin: 0 0 8px; }
+  h2 { font-size: 20px; letter-spacing: -.015em; margin: 40px 0 12px;
+       padding-top: 8px; border-top: 1px solid var(--rule); }
+  h2:first-of-type { border-top: none; padding-top: 0; margin-top: 24px; }
+  h3 { font-size: 15px; font-weight: 600; margin: 24px 0 8px; }
+  p { margin: 8px 0 12px; color: var(--ink-2); }
+  p.lead { font-size: 16px; color: var(--ink-1); }
+  ul, ol { color: var(--ink-2); padding-left: 22px; }
+  li { margin: 4px 0; }
+  code { font-family: 'SF Mono', 'Consolas', 'Menlo', monospace; font-size: 13px;
+         background: var(--code-bg); padding: 1px 5px; border-radius: 3px; color: var(--ink-1); }
+  .formula { background: #EEF4FF; padding: 12px 16px; border-radius: 6px;
+             border-left: 3px solid var(--blue); margin: 12px 0; overflow-x: auto;
+             font-family: 'SF Mono', 'Consolas', monospace; font-size: 13px; white-space: pre-wrap; }
+  .callout { background: #FEF9E7; border-left: 3px solid var(--amber);
+             padding: 12px 16px; border-radius: 6px; margin: 16px 0; font-size: 14px; }
+  .callout b { color: var(--amber); }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 14px; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--rule); }
+  th { font-weight: 600; color: var(--ink-1); background: #fff; }
+  td { color: var(--ink-2); }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .step { display: inline-block; width: 24px; height: 24px; line-height: 24px;
+          text-align: center; background: var(--navy); color: #fff; border-radius: 50%;
+          font-size: 12px; font-weight: 700; margin-right: 8px; vertical-align: middle; }
+  .foot { margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--rule);
+          font-size: 13px; color: var(--ink-3); }
+  .foot a { color: var(--blue); }
+  @media (max-width: 800px) {
+    .layout { grid-template-columns: 1fr; }
+    aside.toc { position: static; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <b>DealArena — Documentation</b>
+  <a href="/">← Back to app</a>
+</header>
+
+<div class="layout">
+<aside class="toc">
+  <h4>Contents</h4>
+  <a href="#overview">Overview</a>
+  <a href="#inputs">Inputs</a>
+  <a href="#step1" class="sub">1. Draw true value</a>
+  <a href="#step2" class="sub">2. Draw synergies</a>
+  <a href="#step3" class="sub">3. Rival reservation prices</a>
+  <a href="#step4" class="sub">4. Actual bids</a>
+  <a href="#step5" class="sub">5. Winner and price</a>
+  <a href="#step6" class="sub">6. Value if you win</a>
+  <a href="#step7" class="sub">7. Score each bid</a>
+  <a href="#step8" class="sub">8. Pick the best feasible</a>
+  <a href="#curse">The winner's curse</a>
+  <a href="#ceiling">The ceiling</a>
+  <a href="#range">The range</a>
+  <a href="#adaptive">Adaptive rivals</a>
+  <a href="#noise">Simulation noise</a>
+  <a href="#model-card">Model card</a>
+</aside>
+
+<main>
+<h1>How DealArena computes its recommendation</h1>
+<p class="lead">Every number on the dashboard is produced by a Monte Carlo simulation of the same auction, repeated tens of thousands of times with different random draws. This page walks through exactly what is drawn, what is scored, and how the recommended bid is chosen.</p>
+
+<h2 id="overview">Overview</h2>
+<p>The engine answers one question: <b>what bid maximises weighted value, given your limits and your rivals' likely behaviour?</b> It simulates 10,000 auctions (by default) in which every rival's bid is drawn from their own model, then tries ~60 candidate bids in the same simulated auctions and scores each one. The recommended bid is the one with the highest weighted utility among bids that respect every hard limit.</p>
+<p>The engine does <b>not</b> look up historical deals or fit any model to real data. Rival behaviour is rule-based with user-chosen parameters. The full model card is at <a href="/api/model" style="color: var(--blue);">/api/model</a>.</p>
+
+<h2 id="inputs">Inputs and what they mean</h2>
+<table>
+<thead><tr><th>Input</th><th>Unit</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>Standalone value</td><td class="num">EURm</td><td>Your estimate of the target's enterprise value if you owned it and did nothing. This is the <i>mean</i> of a lognormal distribution, not a fixed number.</td></tr>
+<tr><td>Value uncertainty</td><td class="num">%</td><td>Standard deviation of the true value, as a percent of standalone. Higher means a stronger winner's curse.</td></tr>
+<tr><td>Synergies (PV)</td><td class="num">EURm</td><td>Present value of cost savings + revenue synergies you believe you can realise.</td></tr>
+<tr><td>Synergy realisation</td><td class="num">%</td><td>Fraction of those synergies you expect to actually deliver. Modelled as normally distributed.</td></tr>
+<tr><td>Strategic / emotional value</td><td class="num">EURm</td><td>Your subjective value beyond cash flows. Counted only if you win.</td></tr>
+<tr><td>Board walk-away</td><td class="num">EURm</td><td>Hard ceiling. The engine never recommends a bid above this.</td></tr>
+<tr><td>Committed financing</td><td class="num">EURm</td><td>Hard ceiling. Cash + committed debt available for the bid.</td></tr>
+<tr><td>Worst-5% loss limit</td><td class="num">EURm</td><td>Maximum average loss in the worst 5% of wins. Hard ceiling on the bid through the tail-loss constraint.</td></tr>
+<tr><td>Weights</td><td class="num">%</td><td>Four importance weights. The recommended bid maximises the weighted score.</td></tr>
+<tr><td>Runs</td><td class="num">auctions</td><td>How many auctions to simulate. 10,000 is fast; 50,000 is more precise.</td></tr>
+</tbody>
+</table>
+
+<h2 id="step1"><span class="step">1</span>Draw the target's true value</h2>
+<p>The true value is drawn from a lognormal distribution with your standalone value as its mean and your uncertainty as its standard deviation:</p>
+<div class="formula">v_true = V × exp(σ × z − 0.5 × σ²)</div>
+<p>where <code>V</code> is standalone value, <code>σ</code> is <code>valueUncertainty / 100</code>, and <code>z</code> is a standard normal draw. The <code>−0.5σ²</code> term makes the distribution's mean equal to <code>V</code>.</p>
+<p>With V = 1,000 and uncertainty = 8%, the true value is anywhere from ~850 to ~1,150 in any single auction. The average is 1,000.</p>
+
+<h2 id="step2"><span class="step">2</span>Draw your realised synergies</h2>
+<div class="formula">syn_real = synergies × clip(realisation/100 + (sd/100) × z, 0, 1.3)</div>
+<p>You said you expect to realise, say, 75% of your synergies. The engine draws an actual realisation from N(75%, 20%), clipped to [0%, 130%]. If synergies are 200 and the draw is 68%, you realise 136 in that scenario.</p>
+
+<h2 id="step3"><span class="step">3</span>Each rival's reservation price</h2>
+<p>Every rival sees a <b>noisy signal</b> of the true value, not the true value itself:</p>
+<div class="formula">signal = (v_true / V) × exp(σ_sig × z_rival − 0.5 × σ_sig²)</div>
+<p>where <code>σ_sig</code> is that rival's <code>signalNoise / 100</code>. Higher noise = the rival's estimate is further from the truth.</p>
+
+<h3>Strategic rival</h3>
+<div class="formula">resv = V × signal × (1 + synergyPct / 100)</div>
+<p>The rival values the target at their noisy estimate plus their own synergies. This is their reservation price — the maximum they would pay.</p>
+
+<h3>PE sponsor</h3>
+<p>PE rivals are valued via a simplified leveraged buyout (LBO) model. Their reservation price is the highest price at which the target still earns their target IRR on exit:</p>
+<div class="formula">D = leverage × EBITDA
+exit_EBITDA = EBITDA × (1 + uplift/100) × (1 + growth/100)^n
+exit_EV = exit_EBITDA × exitMultiple × signal
+exit_equity = max(0, exit_EV − D × (1 − debtPaydown/100))
+resv = D + exit_equity / (1 + targetIRR/100)^n</div>
+<p>where <code>n</code> is the hold period in years. The <code>signal</code> multiplier is the PE sponsor's noisy view of value.</p>
+
+<h2 id="step4"><span class="step">4</span>Actual bids</h2>
+<p>Each rival's bid is their reservation price, discounted by their shading and inflated by auction fever, then capped by their financing:</p>
+<div class="formula">bid_rival = max(0, min(resv × shading × fever, financing_cap))</div>
+<ul>
+<li><b>shading</b> — the fraction of their reservation they choose to bid (e.g., 95% means they leave 5% on the table). In an ascending auction, shading is forced to 100%.</li>
+<li><b>fever</b> — a multiplier above 1 that fires with probability <code>feverProb</code> and adds <code>feverPremium / 100</code>. Models auction fever.</li>
+<li><b>financing_cap</b> — strategic rivals: <code>financingLimit</code>. PE rivals: <code>leverage × EBITDA + maxEquity</code>.</li>
+</ul>
+<p>After all rivals bid, the engine computes <code>top = max(bid_rival)</code> — the highest rival bid in that scenario.</p>
+
+<h2 id="step5"><span class="step">5</span>Who wins, and at what price</h2>
+<p>For any candidate bid <code>b</code>, you win in scenarios where <code>b &gt; top</code>. The price you pay depends on the format:</p>
+<div class="formula">Sealed:     price = b
+Ascending:  price = min(b, top × (1 + increment/100))</div>
+<p>In an ascending auction, you only need to outbid the second-highest rival by one increment. That's why the same bid earns more in an ascending auction.</p>
+
+<h2 id="step6"><span class="step">6</span>Value if you win</h2>
+<div class="formula">fv = (v_true + syn_real − price) if win else 0</div>
+<p>The "value if you win" in one scenario is the difference between the target's true value (plus realised synergies) and what you paid. Averaged over all winning scenarios, that's <code>expFvWin</code> on the dashboard.</p>
+<p>It is <b>not</b> simply <code>V + synergies − bid</code>. It's <code>E[v_true + syn_real | win] − bid</code>. And the conditional expectation <code>E[v_true | win]</code> is <b>lower</b> than <code>V</code> — that's the winner's curse, explained below.</p>
+
+<h2 id="step7"><span class="step">7</span>Score each candidate bid</h2>
+<p>For each candidate bid on the grid (typically 60+ points from 0.8×V to 1.04×max limit), the engine computes:</p>
+<div class="formula">non_fin = (w_strategic/100) × strategicValue + (w_emotional/100) × emotionalValue
+expFv  = pWin × expFvWin
+riskPen = pWin × max(0, −ES5)
+utility = (w_financial/100) × expFv + pWin × non_fin − (w_risk/100) × riskPen</div>
+<ul>
+<li><b>pWin</b> — fraction of simulations where you win</li>
+<li><b>expFvWin</b> — average value if you win (can be negative; the winner's curse is real)</li>
+<li><b>ES5</b> — average of the worst 5% of wins (usually negative)</li>
+<li><b>non_fin</b> — strategic and emotional value, counted <i>only</i> if you win</li>
+</ul>
+<p>The four weight sliders multiply these terms. Set risk weight to 0 and the engine ignores tail losses; set financial weight to 0 and it optimises purely on strategic value.</p>
+
+<h2 id="step8"><span class="step">8</span>Pick the best feasible bid</h2>
+<p>Some bids breach hard limits and are excluded:</p>
+<ul>
+<li><b>Above walk-away</b> — bid &gt; board maximum</li>
+<li><b>Above financing</b> — bid &gt; committed capital</li>
+<li><b>Below value floor</b> — <code>pWin ≥ 0.5%</code> but <code>expFvWin &lt; minNpv</code>: above this bid, you would overpay on average when you win</li>
+<li><b>Above tail-loss limit</b> — <code>pWin ≥ 0.5%</code> but <code>ES5 &lt; −maxTailLoss</code>: above this, worst-5% losses exceed tolerance</li>
+</ul>
+<p>Among the remaining feasible bids, the recommended one is the <b>argmax of utility</b>. If even the best feasible bid has utility ≤ 0, the engine recommends <b>Walk away</b>.</p>
+
+<h2 id="curse">The winner's curse</h2>
+<div class="callout">
+<b>You do not win when you want to.</b> You win when all your rivals happen to bid low — and rivals bid low when their noisy signal of <code>v_true</code> happens to be low, which correlates with <code>v_true</code> being low. So <code>E[v_true | win] &lt; E[v_true]</code>, always.
+</div>
+<p>With V = 1,000 and 8% uncertainty, the winner's curse at bid 1,000 is roughly <b>30 to 50 EURm</b>. That is: conditional on winning at 1,000, the target's average true value is ~950–970, not 1,000. You paid 1,000 for something worth 950–970 — a loss before synergies.</p>
+<p>Your synergies are the buffer. With 200 EURm of synergies realised at 75%, you have ~150 EURm of expected synergy value to absorb the curse. That's why the recommended bid can safely sit at or near V + partial synergies, not V alone.</p>
+
+<h2 id="ceiling">The ceiling</h2>
+<p>The ceiling (the "Never above" number on the dashboard) is the highest bid at which:</p>
+<ol>
+<li>Expected value given a win is still ≥ 0 (or ≥ your minNpv, if you set one)</li>
+<li>The worst-5% loss is within your tolerance</li>
+<li>The bid is within walk-away and financing</li>
+</ol>
+<p>The engine finds each of these via binary search over the bid range, then takes the minimum. The binding one becomes the ceiling. Above it, one of these constraints is violated — you would be bidding past your own interest, and the utility-maximising bid is infeasible.</p>
+<p>That is what the "set by the value floor" message means: <b>the value floor is the constraint that binds</b>, not the number itself. The number 1,120 is the ceiling; the value floor is why it's that particular number and not a higher one.</p>
+
+<h2 id="range">The recommendation range</h2>
+<p>The range (e.g., 991–1,011) is the set of bids whose utility is within statistical noise of the peak:</p>
+<div class="formula">tol = max(2% of best utility, 2 × utility standard error, 0.5)
+rangeLow  = min(bid where utility ≥ best − tol)
+rangeHigh = max(bid where utility ≥ best − tol)</div>
+<p>This is the honest version of "our model isn't precise enough to distinguish these bids." If the range is wide, the recommendation is weakly determined by the inputs. Doubling the number of runs would tighten it but not change the underlying answer.</p>
+
+<h2 id="adaptive">Adaptive rivals (optional)</h2>
+<p>When you tick <b>Rivals adapt to each other</b>, the engine runs an iterated best response before making the recommendation. Each rival, taking the others' shading as given, picks the shading level that maximises their profit. They take turns. The loop stops when:</p>
+<ul>
+<li>No rival can improve by changing their shading alone (converged)</li>
+<li>24 rounds pass without convergence (reports "did not converge")</li>
+<li>A cycle is detected (rivals oscillate between two states)</li>
+</ul>
+<p>The engine reports the <b>exploitability</b> — the maximum any rival could gain by deviating at the final state. Small exploitability (&lt; 0.5 EURm) means the equilibrium is real; large means the loop didn't converge and the adaptive numbers should be treated as indicative. Adaptive runs take 5–20× longer. For most demos, leave this off.</p>
+
+<h2 id="noise">Simulation noise</h2>
+<p>Each win probability has a standard error of <code>sqrt(pWin × (1 − pWin) / N)</code>. At N = 10,000 and pWin = 30%, that's about ±0.46 percentage points. Small, but not zero.</p>
+<p>If the dashboard shows a medium-severity flag "<b>Simulation noise is material</b>", the standard error on the recommended bid's win probability is above 1.5 pp — increase the number of runs to tighten it.</p>
+
+<h2 id="model-card">Model card</h2>
+<p>The rival model is <b>rule-based</b>, not trained on real deal data. Parameters are user-supplied inside calibrated ranges; values outside them are flagged as out-of-distribution. There is no training, no calibration on historical transactions, and no live learning.</p>
+<p>See <a href="/api/model" style="color: var(--blue);">/api/model</a> for the full model card, including the plan to replace rules with trained agents (self-play in this simulator, one neural bid function per rival type).</p>
+
+<p class="foot">DealArena documentation · <a href="/">Back to app</a> · <a href="/docs">API</a> · <a href="/api/model">Model card</a></p>
+</main>
+</div>
+</body>
+</html>
