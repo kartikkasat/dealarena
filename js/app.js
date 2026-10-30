@@ -75,7 +75,7 @@
         sc: null, defaults: null, result: null, meta: null, runs: [], stress: null,
         online: true, running: false, errors: [], toast: '', justRan: false,
         approver: '', decisionNote: '',
-        autoRun: true, tab: 'Rivals', tabs: ['Rivals', 'Strategies', 'Risk', 'Run log'], openComp: null,
+        autoRun: true, view: 'summary', tab: 'Rivals', tabs: ['Rivals', 'Strategies', 'Risk', 'Run log'], openComp: null,
         ladderWidth: 860, rulerWidth: 860,
         weightDefs: [
           { key: 'financial', label: 'Financial value', hint: 'Weight on expected value created for shareholders' },
@@ -87,6 +87,15 @@
     },
     computed: {
       rec: function () { return this.result ? this.result.recommendation : null; },
+      shownWarns: function () { var w = this.result ? this.result.warnings : []; return this.view === 'analysis' ? w : w.filter(function (x) { return x.level === 'high'; }); },
+      story: function () {
+        var p = this.plan, r = this.rec, th = this.th, pr = this.result && this.result.proposed, self = this;
+        if (!p || !r) return '';
+        var verb = function (v) { return (v >= 0 ? 'creates ' : 'loses ') + self.eur(Math.abs(v)); };
+        var s = 'It wins ' + this.pct(r.pWin) + ' of simulated auctions and, when it wins, ' + verb(r.expFvWin) + ' on average.';
+        if (pr && th) s += ' The deal team proposal of ' + this.eur(pr.bid) + ' wins ' + this.pct(pr.pWin) + ' but ' + verb(pr.expFvWin) + ' when it wins' + (th.proposalGap > 0.5 ? ' and is ' + this.eur(th.proposalGap) + ' above the maximum.' : '.');
+        return s;
+      },
       th: function () { return this.result ? this.result.thresholds : null; },
       plan: function () { return this.result ? this.result.bidPlan : null; },
       ad: function () { return this.result ? this.result.adaptation : null; },
@@ -153,6 +162,7 @@
     watch: {
       sc: { deep: true, handler: function () { if (this.autoRun && this._ready) this.scheduleRun(); } },
       result: function () { var self = this; this.$nextTick(function () { self.measure(); self.drawCharts(); }); },
+      view: function () { var self = this; this.$nextTick(function () { self.measure(); self.drawCharts(); }); },
       tab: function () { var self = this; this.$nextTick(function () { self.measure(); self.drawCharts(); }); }
     },
     mounted: function () {
@@ -169,6 +179,43 @@
       pct: function (v) { return v == null ? '' : fmt0.format(v * 100) + '%'; },
       fmtInt: function (v) { return fmt0.format(v); },
       lower: function (s) { return s ? s.charAt(0).toLowerCase() + s.slice(1) : ''; },
+      noteMd: function () {
+        var self = this, r = this.result, p = this.plan, rec = this.rec, th = this.th, pr = r.proposed, m = this.meta, sc = this.sc, L = [];
+        L.push('# Bid decision note: ' + sc.deal.name, '', '_Decision support only. A named deal committee decides. Hypothetical data unless stated._', '');
+        L.push('## Recommendation', '');
+        L.push(p ? '**' + (p.action === 'submit' ? 'Submit ' : 'Stay in up to ') + this.eur(p.bid) + '** (range ' + this.eur(p.rangeLow) + ' to ' + this.eur(p.rangeHigh) + '). Never above ' + this.eur(p.neverAbove) + ', set by ' + this.lower(p.neverAboveReason) + '.' : '**Walk away.** No bid within the hard limits creates value under these inputs.', '');
+        if (p) L.push(this.story, '');
+        L.push('Reliability: **' + r.reliability + '**. Rivals: ' + (this.adaptiveOn ? 'adaptive (iterated best response)' : 'fixed rules') + '. Rival model is rule-based, not trained or calibrated on deal data.', '');
+        if (rec) {
+          L.push('## Key figures at the recommended bid', '', '| Measure | Value |', '|---|---|',
+            '| Win chance | ' + this.pct(rec.pWin) + ' |', '| Value if we win | ' + this.eurSigned(rec.expFvWin) + ' |', '| Expected value | ' + this.eurSigned(rec.expFv) + ' |',
+            '| Overpay chance if we win | ' + this.pct(rec.pOverWin) + ' |', '| Worst 5% if we win | ' + this.eurSigned(rec.es5Win) + ' |', '');
+        }
+        if (pr && th) L.push('## Deal team proposal', '', this.eur(pr.bid) + ': ' + (th.proposalGap > 0.5 ? this.eur(th.proposalGap) + ' above the maximum' : 'within the maximum') + '. Wins ' + this.pct(pr.pWin) + ', ' + this.eurSigned(pr.expFvWin) + ' on average when it wins.', '');
+        if (th) {
+          L.push('## Hard limits (highest bid each allows)', '', '| Limit | Maximum bid | |', '|---|---|---|');
+          th.rows.forEach(function (x) { if (x.active) L.push('| ' + x.label + ' | ' + self.eur(x.max) + ' | ' + (x.binding ? '**binding**' : '') + ' |'); });
+          L.push('');
+        }
+        if (r.warnings.length) { L.push('## Flags', ''); r.warnings.forEach(function (w) { L.push('- **' + w.title + '.** ' + w.detail); }); L.push(''); }
+        L.push('## Basis', '', '- Standalone value ' + this.eur(sc.deal.standaloneValue) + ', uncertainty ' + sc.deal.valueUncertainty + '%, ' + (sc.deal.format === 'sealed' ? 'sealed bid' : 'ascending') + ' auction',
+          '- Synergies ' + this.eur(sc.acquirer.synergies) + ' at ' + sc.acquirer.synergyRealisation + '% realisation',
+          '- Strategic value ' + this.eur(sc.acquirer.strategicValue) + ' and emotional value ' + this.eur(sc.acquirer.emotionalValue) + ' are user assumptions, not measured', '');
+        L.push('## Audit trail', '', '- Run ' + (m ? m.runId : '') + ', seed ' + r.seed + ', ' + this.fmtInt(r.runs) + ' auctions, engine ' + r.version + ', rival model ' + r.rivalModel,
+          '', '## Committee decision', '', 'Approver: ____________  Date: ____________  Decision: approve / reject', '');
+        return L.join('\n');
+      },
+      downloadNote: function () {
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([this.noteMd()], { type: 'text/markdown' }));
+        a.download = 'decision-note-' + (this.meta ? this.meta.runId.slice(-6) : 'run') + '.md';
+        document.body.appendChild(a); a.click(); a.remove(); this.flash('Decision note downloaded.');
+      },
+      copyNote: function () {
+        var self = this;
+        (navigator.clipboard ? navigator.clipboard.writeText(this.noteMd()) : Promise.reject())
+          .then(function () { self.flash('Decision note copied.'); }).catch(function () { self.flash('Copy was blocked: use Download.'); });
+      },
       timeOf: function (iso) { try { return new Date(iso).toLocaleTimeString('en-GB'); } catch (e) { return iso; } },
       compWarn: function (id) {
         if (!this.result) return false;

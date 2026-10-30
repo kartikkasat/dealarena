@@ -112,21 +112,25 @@
           <label class="sw"><span>Fresh random seed each run</span><input type="checkbox" v-model="sc.sim.randomSeed"></label>
           <num-field v-if="!sc.sim.randomSeed" label="Fixed seed" v-model="sc.sim.seed" :min="0" hint="20261030 reproduces the sample case in the deck"></num-field>
           <label class="sw"><span>Rerun when inputs change</span><input type="checkbox" v-model="autoRun"></label>
+          <button class="btn ghost sm" @click="runStress" :disabled="!online || running || !result" title="Reruns this case with more aggressive rivals (more auction fever, bigger premiums, less bid shading) and logs it as a scenario. It never sets the recommendation.">Run stress test</button>
         </details>
       </div>
       <div class="run">
         <button class="btn primary" @click="runNow(true)" :disabled="!online" :aria-busy="running ? 'true' : 'false'"><span v-if="running" class="spin" aria-hidden="true"></span>{{ running ? 'Simulating' : 'Run simulation' }}</button>
-        <button class="btn ghost" @click="runStress" :disabled="!online || running || !result" title="Rerun with more aggressive rivals">Stress</button>
       </div>
     </aside>
 
     <!-- ================================================ results -->
-    <main class="main" ref="main">
+    <main class="main" :class="{stale: errors.length}" ref="main">
       <div v-if="!online" class="note bad">The compute engine is not reachable. Start it with <code>python3 serve.py</code> in the project folder, then reload this page.</div>
-      <div v-if="errors.length" class="note bad" role="alert"><div v-for="e in errors" :key="e">{{ e }}</div></div>
+      <div v-if="errors.length" class="note bad" role="alert"><b>Not run. The results below are from the previous valid run.</b><div v-for="e in errors" :key="e">{{ e }}</div></div>
       <div v-if="online && !result && !errors.length" class="empty">Running the first simulation…</div>
 
       <template v-if="result">
+        <div class="seg" role="tablist" aria-label="View">
+          <button role="tab" :aria-selected="view === 'summary'" @click="view = 'summary'">Summary</button>
+          <button role="tab" :aria-selected="view === 'analysis'" @click="view = 'analysis'">Analysis</button>
+        </div>
         <section class="hero" :class="{flash: justRan}" aria-live="polite">
           <div>
             <div class="eyebrow">{{ plan ? 'System bid' : 'System decision' }}</div>
@@ -134,20 +138,21 @@
             <h1 v-else class="neg">Walk away</h1>
             <p v-if="plan">Range {{ eur(plan.rangeLow) }} to {{ eur(plan.rangeHigh) }}. Never above <b>{{ eur(plan.neverAbove) }}</b>, set by {{ lower(plan.neverAboveReason) }}.</p>
             <p v-else>No bid within the hard limits creates value under these inputs.</p>
+            <p class="story" v-if="view === 'summary' && plan">{{ story }}</p>
           </div>
           <div class="meta">
             <span class="chip" :class="'rel-' + result.reliability">{{ result.reliability }} reliability</span>
             <span class="chip" :class="{blue: adaptiveOn}">{{ adaptiveOn ? 'Adaptive rivals' : 'Fixed-rule rivals' }}</span>
-            <span class="small" v-if="meta">Run {{ meta.runId.slice(-6) }}, seed {{ result.seed }}, {{ fmtInt(result.runs) }} auctions, {{ meta.durationMs }} ms · <a class="lnk" href="/api/model" target="_blank" rel="noopener" title="Rival model: rule-based, not trained or calibrated on deal data. Opens the model card.">model card</a></span>
+            <span class="small" v-if="meta && view === 'analysis'">Run {{ meta.runId.slice(-6) }}, seed {{ result.seed }}, {{ fmtInt(result.runs) }} auctions, {{ meta.durationMs }} ms · <a class="lnk" href="/api/model" target="_blank" rel="noopener" title="Rival model: rule-based, not trained or calibrated on deal data. Opens the model card.">model card</a></span>
           </div>
         </section>
 
         <section class="stats" v-if="rec">
           <div><span>Win chance</span><b>{{ pct(rec.pWin) }}</b></div>
           <div><span>Value if we win</span><b :class="rec.expFvWin < 0 ? 'neg' : ''">{{ eurSigned(rec.expFvWin) }}</b></div>
-          <div><span>Expected value</span><b :class="rec.expFv < 0 ? 'neg' : ''">{{ eurSigned(rec.expFv) }}</b></div>
-          <div><span>Overpay chance if we win</span><b>{{ pct(rec.pOverWin) }}</b></div>
-          <div><span>Worst 5% if we win</span><b :class="rec.es5Win < 0 ? 'neg' : ''">{{ eurSigned(rec.es5Win) }}</b></div>
+          <div v-if="view === 'analysis'"><span>Expected value</span><b :class="rec.expFv < 0 ? 'neg' : ''">{{ eurSigned(rec.expFv) }}</b></div>
+          <div v-if="view === 'analysis'"><span>Overpay chance if we win</span><b>{{ pct(rec.pOverWin) }}</b></div>
+          <div><span>Worst 5% if we win</span><b>{{ eurSigned(rec.es5Win) }}</b></div>
         </section>
 
         <div class="prop" v-if="result.proposed && th">
@@ -161,7 +166,13 @@
           <span>Stress test (more aggressive rivals): system bid {{ stress.bid ? eur(stress.bid) : 'walk away' }}<template v-if="stress.bid">, wins {{ pct(stress.pWin) }}</template>.</span>
         </div>
 
-        <section class="card">
+        <section class="card note-card" v-if="view === 'summary'">
+          <div class="card-h"><h2>Decision note</h2><span class="muted">One page for the committee: recommendation, limits, flags and audit trail.</span></div>
+          <div class="row-btns"><button class="btn primary" @click="downloadNote">Download note (.md)</button><button class="btn ghost" @click="copyNote">Copy</button></div>
+          <p class="small" v-if="result.warnings.length">{{ result.warnings.length }} flag{{ result.warnings.length === 1 ? '' : 's' }} in total. <a class="lnk" href="#" @click.prevent="view = 'analysis'">Open Analysis</a></p>
+        </section>
+
+        <section class="card" v-if="view === 'analysis'">
           <div class="card-h"><h2>Decision limits</h2><span class="muted">Highest bid each hard limit allows, EURm. The shortest bar sets the maximum.</span></div>
           <div class="ladder-wrap" ref="ladderWrap">
             <svg v-if="ladder" :viewBox="'0 0 ' + ladder.w + ' ' + ladder.h" :height="ladder.h" class="ladder" role="img" :aria-label="'Maximum defensible bid ' + eur(th.ceiling)">
@@ -172,9 +183,9 @@
                       :fill="r.ref ? 'none' : (r.binding ? '#B42318' : (r.active ? '#AEB9CA' : '#E3E7ED'))" :stroke="r.ref ? '#8A95A6' : 'none'" :stroke-dasharray="r.ref ? '4 3' : null"/>
               </g>
               <line :x1="ladder.xCeil" :x2="ladder.xCeil" :y1="ladder.top - 8" :y2="ladder.bottom" stroke="#B42318" stroke-width="2"/>
-              <g v-if="ladder.xRec !== null"><line :x1="ladder.xRec" :x2="ladder.xRec" :y1="ladder.top - 4" :y2="ladder.bottom + 24" stroke="#2459C4" stroke-width="2.5"/>
+              <g v-if="ladder.xRec !== null"><line :x1="ladder.xRec" :x2="ladder.xRec" :y1="ladder.top - 4" :y2="ladder.bottom" stroke="#2459C4" stroke-width="2.5"/>
                 <text class="mk" :x="ladder.xRec" :y="ladder.bottom + 38" :text-anchor="ladder.anchor(ladder.xRec)" fill="#2459C4">System bid {{ eur(plan.bid) }}</text></g>
-              <g v-if="ladder.xProp !== null"><line :x1="ladder.xProp" :x2="ladder.xProp" :y1="ladder.top - 4" :y2="ladder.bottom + 40" stroke="#A86A12" stroke-width="2" stroke-dasharray="5 3"/>
+              <g v-if="ladder.xProp !== null"><line :x1="ladder.xProp" :x2="ladder.xProp" :y1="ladder.top - 4" :y2="ladder.bottom" stroke="#A86A12" stroke-width="2" stroke-dasharray="5 3"/>
                 <text class="mk" :x="ladder.xProp" :y="ladder.bottom + 54" :text-anchor="ladder.anchor(ladder.xProp)" fill="#A86A12">Proposal {{ eur(result.proposed.bid) }}</text></g>
               <text class="mk" :x="ladder.xCeil" :y="ladder.top - 12" :text-anchor="ladder.anchor(ladder.xCeil)" fill="#8E1C13">Maximum {{ eur(th.ceiling) }}</text>
               <g v-for="r in ladder.rows" :key="'t' + r.key">
@@ -190,13 +201,14 @@
           </div>
         </section>
 
-        <section class="warns" v-if="result.warnings.length">
-          <div v-for="(w, i) in result.warnings" :key="i" class="w" :class="w.level" :title="w.detail">
+        <section class="warns" v-if="shownWarns.length">
+          <div v-for="(w, i) in shownWarns" :key="i" class="w" :class="w.level" :title="w.detail">
             <span class="dot" :class="{red: w.level === 'high', amber: w.level === 'medium', navy: w.level === 'limit', grey: w.level === 'info'}"></span>
             <span><b>{{ w.title }}</b> <span class="muted">{{ w.detail }}</span></span>
           </div>
         </section>
 
+        <template v-if="view === 'analysis'">
         <nav class="tabs" role="tablist">
           <button v-for="t in tabs" :key="t" role="tab" :aria-selected="tab === t" @click="tab = t">{{ t }}</button>
         </nav>
@@ -289,6 +301,7 @@
           </div>
         </section>
 
+        </template>
         <p class="foot">Hypothetical data. The system proposes the bid; a named deal committee decides and the decision is logged. Rivals follow rules, not a trained model. Strategic and emotional values are user assumptions, reported separately from financial value.</p>
       </template>
     </main>
