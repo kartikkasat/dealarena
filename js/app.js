@@ -75,7 +75,7 @@
         sc: null, defaults: null, result: null, meta: null, runs: [], stress: null,
         online: true, running: false, errors: [], toast: '', justRan: false,
         approver: '', decisionNote: '',
-        autoRun: true, view: 'summary', tab: 'Rivals', tabs: ['Rivals', 'Strategies', 'Risk', 'Run log'], openComp: null,
+        autoRun: false, view: 'summary', tab: 'Rivals', tabs: ['Rivals', 'Strategies', 'Risk', 'Run log'], openComp: null,
         ladderWidth: 860, rulerWidth: 860,
         weightDefs: [
           { key: 'financial', label: 'Financial value', hint: 'Weight on expected value created for shareholders' },

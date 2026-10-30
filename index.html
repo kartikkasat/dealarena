@@ -108,11 +108,10 @@
 
         <details class="grp">
           <summary>Simulation</summary>
-          <num-field label="Simulated auctions" v-model="sc.sim.runs" :min="500" :max="50000" :step="500" unit="auctions" hint="Number of randomised auction outcomes. 10,000 runs in about a second; 50,000 reduces noise."></num-field>
+          <num-field label="Simulated auctions" unit="auctions" v-model="sc.sim.runs" :min="500" :max="50000" :step="500" unit="auctions" hint="Number of randomised auction outcomes. 10,000 runs in about a second; 50,000 reduces noise."></num-field>
           <label class="sw"><span>Fresh random seed each run</span><input type="checkbox" v-model="sc.sim.randomSeed"></label>
-          <num-field v-if="!sc.sim.randomSeed" label="Fixed seed" v-model="sc.sim.seed" :min="0" hint="20261030 reproduces the sample case in the deck" unit="seed"></num-field>
+          <num-field v-if="!sc.sim.randomSeed" label="Fixed seed" unit="seed" v-model="sc.sim.seed" :min="0" hint="20261030 reproduces the sample case in the deck" unit="seed"></num-field>
           <label class="sw"><span>Rerun when inputs change</span><input type="checkbox" v-model="autoRun"></label>
-          <button class="btn ghost sm" @click="runStress" :disabled="!online || running || !result" title="Reruns this case with more aggressive rivals (more auction fever, bigger premiums, less bid shading) and logs it as a scenario. It never sets the recommendation.">Run stress test</button>
         </details>
       </div>
       <div class="run">
@@ -160,10 +159,6 @@
           <span>Proposal {{ eur(result.proposed.bid) }}:
             <b :class="th.proposalGap > 0.5 ? 'neg' : 'pos'">{{ th.proposalGap > 0.5 ? eur(th.proposalGap) + ' above the maximum' : 'within the maximum' }}</b>.
             Wins {{ pct(result.proposed.pWin) }}, {{ eurSigned(result.proposed.expFvWin) }} on average when it wins.</span>
-        </div>
-        <div class="prop" v-if="stress">
-          <span class="dot grey"></span>
-          <span>Stress test (more aggressive rivals): system bid {{ stress.bid ? eur(stress.bid) : 'walk away' }}<template v-if="stress.bid">, wins {{ pct(stress.pWin) }}</template>.</span>
         </div>
 
         <section class="card note-card" v-if="view === 'summary'">
