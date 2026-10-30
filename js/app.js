@@ -117,7 +117,7 @@
         th.rows.forEach(function (r) { if (!r.above) vals.push(r.max); });
         var lo = Math.floor(Math.min.apply(null, vals) * 0.88 / 50) * 50, hi = Math.ceil(Math.max.apply(null, vals) * 1.04 / 50) * 50;
         var sx = function (v) { return left + (Math.max(lo, Math.min(hi, v)) - lo) / (hi - lo) * (right - left); };
-        var stepT = (hi - lo) > 700 ? 200 : ((hi - lo) > 350 ? 100 : 50); if (compact && stepT < 100) stepT = 100;
+        var stepT = (hi - lo) > 700 ? 200 : ((hi - lo) > 350 ? 100 : 50); if (compact && stepT < 100) stepT = 100; while ((hi - lo) / stepT > 7) stepT *= 2;
         var ticks = []; for (var t = Math.ceil(lo / stepT) * stepT; t <= hi; t += stepT) ticks.push({ v: t, x: sx(t), label: fmt0.format(t) });
         var out = rows.map(function (r, i) {
           var y = top + i * rowH + (compact ? 14 : 0);
@@ -138,7 +138,7 @@
         var hi = Math.max(this.th.ceiling * 1.05, Math.max.apply(null, cs.map(function (c) { return c.p975; })));
         lo = Math.floor(lo / 50) * 50; hi = Math.ceil(hi / 50) * 50;
         var sx = function (v) { return left + (Math.max(lo, Math.min(hi, v)) - lo) / (hi - lo) * (right - left); };
-        var stepT = (hi - lo) > 700 ? 200 : 100;
+        var stepT = (hi - lo) > 700 ? 200 : 100; while ((hi - lo) / stepT > 7) stepT *= 2;
         var ticks = []; for (var t = Math.ceil(lo / stepT) * stepT; t <= hi; t += stepT) ticks.push({ v: t, x: sx(t), label: fmt0.format(t) });
         var rows = cs.map(function (c, i) {
           var y = top + i * rowH + rowH / 2 + (compact ? 8 : 0);

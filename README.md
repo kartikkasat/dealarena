@@ -137,7 +137,7 @@ dealarena/
   logs/                     created at runtime
 ```
 
-Run the checks (38 tests):
+Run the checks (13 tests):
 
 ```bash
 python3 -m pip install -r backend/requirements-dev.txt
