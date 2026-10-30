@@ -117,6 +117,7 @@
         </details>
       </div>
       <div class="run">
+        <button class="btn ghost sm" @click="openImport" :disabled="!online" title="Import competitor bid data (CSV/JSON) or add supplementary context notes">Import</button>
         <button class="btn primary" @click="runNow(true)" :disabled="!online" :aria-busy="running ? 'true' : 'false'"><span v-if="running" class="spin" aria-hidden="true"></span>{{ running ? 'Simulating' : 'Run simulation' }}</button>
       </div>
     </aside>
@@ -308,6 +309,47 @@
     </main>
   </div>
   <div v-if="toast" class="toast" role="status" aria-live="polite">{{ toast }}</div>
+
+  <!-- ============ import modal ============ -->
+  <dialog ref="importModal" class="modal" @click.self="closeImport">
+    <div class="modal-h">
+      <h2>Import supporting data</h2>
+      <button class="btn ghost sm" @click="closeImport">Close</button>
+    </div>
+    <div class="modal-tabs">
+      <button :class="{ active: importTab === 'csv' }" @click="importTab = 'csv'">Competitor data</button>
+      <button :class="{ active: importTab === 'notes' }" @click="importTab = 'notes'">Context notes</button>
+    </div>
+    <div class="modal-body" v-show="importTab === 'csv'">
+      <p class="small">Upload a CSV or JSON of competitor observed bids. Each row maps to one of the rivals in your scenario; the engine flags it as an outlier if it sits outside their modelled 95% band.</p>
+      <p class="small">Format: <code>competitor_name,observed_bid</code> per row, or a JSON array of <code>{"name": "...", "bid": 1234}</code>. <a class="lnk" href="data:text/csv;charset=utf-8,competitor_name%2Cobserved_bid%0ANordic%20peer%2C1150%0AUS%20conglomerate%2C1200" download="dealarena-sample.csv" style="font-size:12px;">Download sample format</a></p>
+      <input type="file" accept=".csv,.json" @change="onFileChange" style="margin:8px 0;">
+      <div v-if="importPreview.length" style="margin-top:12px;">
+        <table class="tbl">
+          <thead><tr><th>#</th><th>Name in file</th><th>Bid</th><th>Apply to</th></tr></thead>
+          <tbody>
+            <tr v-for="(r, i) in importPreview" :key="i">
+              <td>{{ i + 1 }}</td>
+              <td>{{ r.name }}</td>
+              <td class="num">{{ eur(r.bid) }}</td>
+              <td>
+                <select v-model="r.applyTo" style="font-family:inherit;font-size:12px;padding:2px 6px;">
+                  <option value="">— skip —</option>
+                  <option v-for="c in sc.competitors" :key="c.id" :value="c.id">{{ c.name }}</option>
+                </select>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <button class="btn primary" @click="applyImport" style="margin-top:8px;">Apply selected bids</button>
+      </div>
+    </div>
+    <div class="modal-body" v-show="importTab === 'notes'">
+      <p class="small"><b>Does not affect the simulation.</b> Text here is saved locally and appears in the decision note under "Supplementary context" — useful for diligence findings, board constraints, or precedent transactions to accompany the recommendation.</p>
+      <textarea v-model="importNotes" rows="8" placeholder="e.g., Diligence confirms EUR 40m of synergy from procurement. Board will not approve above EUR 1,250m without CEO sign-off." style="width:100%;font-family:inherit;font-size:13px;padding:8px;border:1px solid #D5DBE4;border-radius:6px;resize:vertical;"></textarea>
+      <button class="btn primary" @click="saveNotes" style="margin-top:8px;">Save notes</button>
+    </div>
+  </dialog>
 </script>
 
 <script src="vendor/vue.global.prod.js"></script>

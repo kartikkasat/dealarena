@@ -75,6 +75,7 @@
         sc: null, defaults: null, result: null, meta: null, runs: [], stress: null,
         online: true, running: false, errors: [], toast: '', justRan: false,
         approver: '', decisionNote: '',
+        importPreview: [], importNotes: '', importTab: 'csv',
         autoRun: false, view: 'summary', tab: 'Rivals', tabs: ['Rivals', 'Strategies', 'Risk', 'Run log'], openComp: null,
         ladderWidth: 860, rulerWidth: 860,
         weightDefs: [
@@ -91,6 +92,51 @@
         if (!this.sc) return 1;
         var w = this.sc.weights;
         return Math.max(1e-9, (w.financial || 0) + (w.strategic || 0) + (w.emotional || 0) + (w.risk || 0));
+      },
+      economicsNeeded: function () {
+        var r = this.result, self = this;
+        if (!r || !r.walkAwayRecommended) return null;
+        var diag = this.walkAwayDiagnostic;
+        if (!diag) return null;
+        var th = r.thresholds, i, j, best = null, need = null;
+
+        if (diag.case === 'cannot-win' || diag.case === 'no-feasible') {
+          for (i = 0; i < r.curve.length; i++) {
+            if (r.curve[i].pWin >= 0.05) { need = r.curve[i].bid; break; }
+          }
+          if (need !== null) {
+            var rounded = Math.ceil(need / 50) * 50;
+            return {
+              headline: 'To win 5% of auctions, you would need to approve a bid of at least ' + self.eur(rounded) + '.',
+              detail: 'Your current walk-away is ' + self.eur(this.sc.limits.walkAway) + '. Raising the board walk-away and committed financing to at least ' + self.eur(rounded) + ' would make this deal competitive. Below that, rivals outbid you in every simulated auction.'
+            };
+          }
+        }
+
+        if (diag.case === 'negative-value') {
+          for (j = 0; j < r.curve.length; j++) {
+            if (r.curve[j].feasible && (!best || r.curve[j].utility > best.utility)) best = r.curve[j];
+          }
+          if (best && best.expFvWin < 0) {
+            var loss = -best.expFvWin;
+            var real = this.sc.acquirer.synergyRealisation / 100;
+            var current_value = this.sc.acquirer.synergies * real;
+            var needed_value = current_value + loss * 1.25;
+            var syn_needed = Math.ceil(needed_value / real / 50) * 50;
+            return {
+              headline: 'Synergies would need to reach roughly ' + self.eur(syn_needed) + ' for the economics to work at this approval.',
+              detail: 'You entered ' + self.eur(this.sc.acquirer.synergies) + ' at ' + this.sc.acquirer.synergyRealisation + '% realisation, or about ' + self.eur(Math.round(current_value)) + ' realisable. At the best feasible bid, the winner\'s curse absorbs ' + self.eur(Math.round(loss)) + ' per win. Raise synergies to about ' + self.eur(syn_needed) + ', or lower the walk-away.'
+            };
+          }
+        }
+
+        if (diag.case === 'utility-negative') {
+          return {
+            headline: 'Value is positive, but the risk weight is wiping it out.',
+            detail: 'Move the risk slider from ' + this.sc.weights.risk + '% toward 25% and the recommended bid will move into positive territory. Alternatively, raise the worst-5% loss tolerance in Guardrails.'
+          };
+        }
+        return null;
       },
       walkAwayDiagnostic: function () {
         if (!this.result || !this.result.walkAwayRecommended) return null;
@@ -209,6 +255,7 @@
       this.checkHealth().then(function () { return api('GET', '/api/scenario/default'); })
         .then(function (s) { self.defaults = JSON.parse(JSON.stringify(s)); self.sc = s; self.$nextTick(function () { self._ready = true; self.runNow(false); }); })
         .catch(function () { self.online = false; });
+      try { this.importNotes = localStorage.getItem('dealarena.notes') || ''; } catch (e) {}
       this._hb = setInterval(function () { self.checkHealth().catch(function () {}); }, 15000);
     },
     methods: {
@@ -328,6 +375,57 @@
         api('POST', '/api/runs/' + encodeURIComponent(id) + '/decision', { approver: this.approver, decision: decision, note: this.decisionNote })
           .then(function (d) { self.decisionNote = ''; self.loadRuns(); self.flash('Run ' + id.slice(-6) + ' ' + d.decision + ' by ' + d.approver + '; logged.'); })
           .catch(function (e) { self.flash((e.messages && e.messages.join(' ')) || e.message, 5000); });
+      },
+      openImport: function () { if (this.$refs.importModal) this.$refs.importModal.showModal(); },
+      closeImport: function () { if (this.$refs.importModal) this.$refs.importModal.close(); },
+      onFileChange: function (e) {
+        var f = e.target.files && e.target.files[0];
+        if (!f) return;
+        var self = this, reader = new FileReader();
+        reader.onload = function (ev) {
+          var text = String(ev.target.result || ''), rows = [];
+          try {
+            if (/\.json$/i.test(f.name)) {
+              var arr = JSON.parse(text);
+              if (Array.isArray(arr)) arr.forEach(function (it) {
+                var n = it.name || it.competitor || '';
+                var b = parseFloat(it.bid || it.observedBid || 0);
+                if (n && b > 0) rows.push({ name: n, bid: b, applyTo: '' });
+              });
+            } else {
+              text.split(/\r?\n/).forEach(function (line, i) {
+                if (!line.trim()) return;
+                if (i === 0 && /name|competitor/i.test(line)) return;
+                var parts = line.split(',');
+                if (parts.length >= 2) {
+                  var n = parts[0].trim(), b = parseFloat(parts[1].trim());
+                  if (n && b > 0) rows.push({ name: n, bid: b, applyTo: '' });
+                }
+              });
+            }
+          } catch (err) { self.flash('Could not parse file: ' + err.message); return; }
+          if (!rows.length) { self.flash('No valid rows found'); return; }
+          self.importPreview = rows;
+        };
+        reader.readAsText(f);
+      },
+      applyImport: function () {
+        var self = this, applied = 0;
+        this.importPreview.forEach(function (r) {
+          if (!r.applyTo) return;
+          var c = self.sc.competitors.find(function (x) { return x.id === r.applyTo; });
+          if (c) { c.observedBid = r.bid; applied++; }
+        });
+        if (!applied) { this.flash('Nothing applied — pick a target for at least one row'); return; }
+        this.flash('Applied ' + applied + ' observed bid(s). Run to use them.');
+        this.importPreview = [];
+        this.closeImport();
+        if (!this.autoRun) this.runNow(true);
+      },
+      saveNotes: function () {
+        try { localStorage.setItem('dealarena.notes', this.importNotes || ''); } catch (e) {}
+        this.flash('Notes saved — they will appear in the decision note');
+        this.closeImport();
       },
       loadRuns: function () {
         var self = this;
