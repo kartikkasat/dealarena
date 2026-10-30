@@ -87,6 +87,11 @@
     },
     computed: {
       rec: function () { return this.result ? this.result.recommendation : null; },
+      weightTotal: function () {
+        if (!this.sc) return 1;
+        var w = this.sc.weights;
+        return Math.max(1e-9, (w.financial || 0) + (w.strategic || 0) + (w.emotional || 0) + (w.risk || 0));
+      },
       walkAwayDiagnostic: function () {
         if (!this.result || !this.result.walkAwayRecommended) return null;
         var r = this.result, th = r.thresholds, best = null;
@@ -212,6 +217,10 @@
       pct: function (v) { return v == null ? '' : fmt0.format(v * 100) + '%'; },
       fmtInt: function (v) { return fmt0.format(v); },
       lower: function (s) { return s ? s.charAt(0).toLowerCase() + s.slice(1) : ''; },
+      effectiveWeight: function (k) {
+        if (!this.sc) return 0;
+        return Math.round((this.sc.weights[k] || 0) / this.weightTotal * 100);
+      },
       noteMd: function () {
         var self = this, r = this.result, p = this.plan, rec = this.rec, th = this.th, pr = r.proposed, m = this.meta, sc = this.sc, L = [];
         L.push('# Bid decision note: ' + sc.deal.name, '', '_Decision support only. A named deal committee decides. Hypothetical data unless stated._', '');

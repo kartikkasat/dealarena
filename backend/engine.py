@@ -597,8 +597,24 @@ def run(scenario: dict, seed: int | None = None) -> dict:
     if adaptation and adaptation["enabled"] and adaptation["status"] == "not":
         warn("high", "Rivals did not settle into an equilibrium",
              "Best responses were still changing after %d rounds. Treat the adaptive result as unreliable; increase the number of simulated auctions." % adaptation["rounds"])
+    if L["walkAway"] < 0.85 * V:
+        warn("info", "Board maximum is well below standalone value",
+             "Walk-away of EUR %dm sits %.0f%% below the standalone value of EUR %dm. "
+             "Bids above standalone are often needed to win competitive auctions."
+             % (js_round(L["walkAway"]), (1 - L["walkAway"] / V) * 100, js_round(V)))
     if walk_away:
-        warn("info", "No feasible bid improves on walking away", "Under the current limits and weights every candidate bid scores at or below zero.")
+        if curve and all(c["pWin"] < 0.005 for c in curve):
+            warn("high", "No bid can win at the current approval boundary",
+                 "Every rival outbids your ceiling of EUR %dm in every simulated auction. "
+                 "Weights, strategic value and emotional value cannot change this outcome: when no bid wins, no value is created. "
+                 "Raise the board walk-away above EUR %dm to compete, or confirm this target is out of reach."
+                 % (js_round(ceiling), js_round(float(np.median(top)))))
+        elif not feasible:
+            warn("info", "No feasible bid under current guardrails",
+                 "Every candidate bid breaches at least one approval boundary. Loosen a boundary, or confirm walk-away.")
+        else:
+            warn("info", "No feasible bid creates value",
+                 "The best feasible bid scores at or below zero on the weighted objective. Reduce risk weighting or raise the loss tolerance.")
     if best_all and rec and abs(best_all["bid"] - rec["bid"]) > step * 0.5 and not best_all["feasible"]:
         warn("info", "Hard limits changed the decision",
              "Preferences alone would bid EUR %dm (%s). The engine capped the system bid at EUR %dm."

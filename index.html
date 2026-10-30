@@ -64,9 +64,10 @@
         <details class="grp">
           <summary>Preferences <span class="tag blue">weighted</span></summary>
           <div class="rng" v-for="w in weightDefs" :key="w.key" :data-tip="w.hint">
-            <div class="rng-h"><span>{{ w.label }}</span><b>{{ sc.weights[w.key] }}%</b></div>
+            <div class="rng-h"><span>{{ w.label }}</span><b>{{ sc.weights[w.key] }} <small class="muted" style="font-weight:400;font-size:11px;">({{ effectiveWeight(w.key) }}% effective)</small></b></div>
             <input type="range" min="0" max="150" step="5" v-model.number="sc.weights[w.key]" :aria-label="w.label">
           </div>
+          <p class="small muted" style="font-size:11px;margin:2px 0 10px;line-height:1.4;">Weights are relative, not absolute: only their ratios drive the recommendation. All-at-100 gives the same result as all-at-50 or all-at-150 (each is 25% effective).</p>
           <num-field label="Strategic value" unit="EURm" v-model="sc.acquirer.strategicValue" :min="0" hint="User assumption, counted only if we win"></num-field>
           <num-field label="Emotional value" unit="EURm" v-model="sc.acquirer.emotionalValue" :min="0" hint="User assumption: prestige, reputation"></num-field>
         </details>
