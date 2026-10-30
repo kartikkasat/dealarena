@@ -251,7 +251,7 @@
         this.running = true;
         var t0 = Date.now();
         api('POST', '/api/simulate', this.sc).then(function (res) {
-          var wait = Math.max(0, (manual ? 300 : 0) - (Date.now() - t0));
+          var wait = Math.max(0, (manual ? 120 : 0) - (Date.now() - t0));
           setTimeout(function () { self.running = false; self.online = true; self.accept(res, manual); self.next(); }, wait);
         }).catch(function (e) {
           self.running = false;

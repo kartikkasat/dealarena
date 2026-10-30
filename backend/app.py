@@ -82,6 +82,8 @@ def _clean(x):
         return {k: _clean(v) for k, v in x.items()}
     if isinstance(x, (list, tuple)):
         return [_clean(v) for v in x]
+    if isinstance(x, np.ndarray):
+        return [_clean(v) for v in x.tolist()]
     if isinstance(x, (np.floating,)):
         x = float(x)
     if isinstance(x, (np.integer,)):

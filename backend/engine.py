@@ -155,7 +155,9 @@ def pe_reservation(c: dict, ebitda: float, signal_factor):
 
 
 def financing_cap(c: dict, ebitda: float) -> float:
-    return c["leverage"] * ebitda + c["maxEquity"] if c["type"] == "pe" else c["financingLimit"]
+    if c["type"] == "pe":
+        return c["leverage"] * ebitda + c.get("maxEquity", 0)
+    return c["financingLimit"]
 
 
 def has_proposal(a: dict) -> bool:
@@ -231,13 +233,17 @@ def run(scenario: dict, seed: int | None = None) -> dict:
 
     comp_bids = np.zeros((K, N))
     top = np.zeros(N)
+    _eval_cache: dict = {}
 
     def apply_shading(sh):
         nonlocal top
+        _prev_top = top
         for j in range(K):
             sj = 1.0 if d["format"] == "english" else sh[j]
             comp_bids[j] = np.maximum(0, np.minimum(resv[j] * sj * fev[j], caps[j]))
         top = comp_bids.max(axis=0)
+        if not np.array_equal(top, _prev_top):
+            _eval_cache.clear()
 
     static_sh = [c["shading"] / 100 for c in comps]
     apply_shading(static_sh)
@@ -299,6 +305,16 @@ def run(scenario: dict, seed: int | None = None) -> dict:
         if keep_dist:
             r["_dist"] = fv
         return r
+
+    _eval_orig = evaluate
+    def evaluate(bid: float, keep_dist: bool = False) -> dict:
+        if keep_dist:
+            return _eval_orig(bid, True)
+        if bid in _eval_cache:
+            return copy.deepcopy(_eval_cache[bid])
+        _r = _eval_orig(bid, False)
+        _eval_cache[bid] = copy.deepcopy(_r)
+        return _r
 
     def feasibility(r):
         out = []

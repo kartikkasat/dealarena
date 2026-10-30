@@ -61,7 +61,7 @@ code { background: rgba(0,0,0,.06); padding: 1px 5px; border-radius: 4px; }
 .grp[open] { padding-bottom: 10px; }
 .f { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 4px 0; }
 .f-l { font-size: 13px; color: var(--ink-2); display: inline-flex; align-items: center; gap: 5px; }
-i.info { font-style: normal; font-size: 10px; width: 14px; height: 14px; border-radius: 50%; border: 1px solid var(--ink-3); color: var(--ink-3); display: inline-flex; align-items: center; justify-content: center; cursor: help; }
+i.info { font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; font-style: normal; font-weight: 700; font-size: 10px; line-height: 1; width: 14px; height: 14px; border-radius: 50%; border: 1px solid var(--ink-3); color: var(--ink-3); display: inline-flex; align-items: center; justify-content: center; cursor: help; user-select: none; }
 .f-i { position: relative; width: 116px; flex: none; }
 .f-i.wide { width: 160px; }
 .f-i input, .f-i select { width: 100%; height: 32px; border: 1px solid var(--rule); border-radius: 6px; background: #fff; padding: 4px 8px; text-align: right; font-family: var(--num); font-size: 14px; }

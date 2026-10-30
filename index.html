@@ -14,7 +14,7 @@
 
 <script type="text/x-template" id="num-field">
   <label class="f" :title="hint || null">
-    <span class="f-l">{{ label }}<i v-if="hint" class="info" aria-hidden="true">i</i></span>
+    <span class="f-l">{{ label }}<i v-if="hint" class="info" aria-hidden="true" :title="hint">i</i></span>
     <span class="f-i">
       <input type="number" inputmode="decimal" :min="min" :max="max" :step="step || 'any'" :value="modelValue"
              :placeholder="placeholder" @change="emitVal" @keyup.enter="emitVal">
