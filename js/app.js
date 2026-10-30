@@ -343,4 +343,52 @@
   });
   app.component('num-field', NumField);
   app.mount('#app');
+
+  // ---------- instant tooltip for [data-tip] ----------
+  (function () {
+    var el = null, timer = null;
+    function ensure() {
+      if (el) return el;
+      el = document.createElement('div');
+      el.id = 'da-tip';
+      el.style.cssText = 'position:fixed;background:#1F2A44;color:#fff;padding:6px 10px;'
+        + 'border-radius:6px;font-size:12px;line-height:1.35;max-width:260px;text-align:center;'
+        + 'z-index:99999;pointer-events:none;box-shadow:0 4px 12px rgba(0,0,0,.25);'
+        + 'opacity:0;transition:opacity .1s;font-family:inherit;';
+      document.body.appendChild(el);
+      return el;
+    }
+    function show(target) {
+      var t = ensure();
+      t.textContent = target.getAttribute('data-tip');
+      t.style.display = 'block';
+      var r = target.getBoundingClientRect();
+      var tr = t.getBoundingClientRect();
+      var l = r.left + r.width / 2 - tr.width / 2;
+      var top = r.top - tr.height - 8;
+      if (l < 6) l = 6;
+      if (l + tr.width > window.innerWidth - 6) l = window.innerWidth - tr.width - 6;
+      if (top < 6) top = r.bottom + 8;
+      t.style.left = l + 'px';
+      t.style.top = top + 'px';
+      t.style.opacity = '1';
+    }
+    function hide() {
+      if (el) el.style.opacity = '0';
+    }
+    document.addEventListener('mouseover', function (e) {
+      var target = e.target.closest && e.target.closest('[data-tip]');
+      if (!target) return;
+      clearTimeout(timer);
+      timer = setTimeout(function () { show(target); }, 40);
+    });
+    document.addEventListener('mouseout', function (e) {
+      var target = e.target.closest && e.target.closest('[data-tip]');
+      if (!target) return;
+      clearTimeout(timer);
+      hide();
+    });
+    document.addEventListener('scroll', hide, true);
+    window.addEventListener('blur', hide);
+  })();
 })();

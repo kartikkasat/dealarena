@@ -13,8 +13,8 @@
 <div id="app" v-cloak></div>
 
 <script type="text/x-template" id="num-field">
-  <label class="f" :title="hint || null">
-    <span class="f-l">{{ label }}<i v-if="hint" class="info" aria-hidden="true" :title="hint">i</i></span>
+  <label class="f">
+    <span class="f-l">{{ label }}<i v-if="hint" class="info" aria-hidden="true" :data-tip="hint">i</i></span>
     <span class="f-i">
       <input type="number" inputmode="decimal" :min="min" :max="max" :step="step || 'any'" :value="modelValue"
              :placeholder="placeholder" @change="emitVal" @keyup.enter="emitVal">
@@ -47,22 +47,22 @@
           <num-field label="Value uncertainty" unit="%" v-model="sc.deal.valueUncertainty" :min="0" :max="60" hint="Higher means a stronger winner's curse"></num-field>
           <label class="f"><span class="f-l">Auction format</span>
             <span class="f-i"><select v-model="sc.deal.format"><option value="sealed">Sealed bid</option><option value="english">Ascending</option></select></span></label>
-          <num-field label="Synergies (PV)" unit="EURm" v-model="sc.acquirer.synergies" :min="0" hint="User assumption"></num-field>
+          <num-field label="Synergies (PV)" unit="EURm" v-model="sc.acquirer.synergies" :min="0" hint="Present value of cost savings and revenue synergies you believe are realisable"></num-field>
           <num-field label="Synergy realisation" unit="%" v-model="sc.acquirer.synergyRealisation" :min="0" :max="130" hint="Share of estimated synergies expected to be delivered"></num-field>
           <num-field label="Compare a proposal" unit="EURm" :model-value="sc.acquirer.proposedBid" @update:model-value="v => sc.acquirer.proposedBid = v" :allow-empty="true" placeholder="optional" hint="Optional. The system generates its own bid; a proposal is only compared against it."></num-field>
         </details>
 
         <details class="grp">
           <summary>Hard limits <span class="tag red">enforced</span></summary>
-          <num-field label="Board walk-away" unit="EURm" v-model="sc.limits.walkAway" :min="1"></num-field>
-          <num-field label="Committed financing" unit="EURm" v-model="sc.limits.financing" :min="1"></num-field>
+          <num-field label="Board walk-away" unit="EURm" v-model="sc.limits.walkAway" :min="1" hint="Maximum bid approved by the board. The engine never recommends above this."></num-field>
+          <num-field label="Committed financing" unit="EURm" v-model="sc.limits.financing" :min="1" hint="Cash plus committed debt available for the bid. Hard ceiling."></num-field>
           <num-field label="Worst-5% loss limit" unit="EURm" v-model="sc.limits.maxTailLoss" :min="0" hint="Average loss in the worst 5% of wins must stay below this"></num-field>
           <label class="sw"><span>Value if we win must be ≥ 0</span><input type="checkbox" v-model="sc.limits.requireNonNegativeNpv"></label>
         </details>
 
         <details class="grp">
           <summary>Preferences <span class="tag blue">weighted</span></summary>
-          <div class="rng" v-for="w in weightDefs" :key="w.key" :title="w.hint">
+          <div class="rng" v-for="w in weightDefs" :key="w.key" :data-tip="w.hint">
             <div class="rng-h"><span>{{ w.label }}</span><b>{{ sc.weights[w.key] }}%</b></div>
             <input type="range" min="0" max="150" step="5" v-model.number="sc.weights[w.key]" :aria-label="w.label">
           </div>
@@ -83,19 +83,19 @@
               <label class="f"><span class="f-l">Name</span><span class="f-i wide"><input type="text" v-model="c.name" maxlength="80"></span></label>
               <label class="sw"><span>Included</span><input type="checkbox" v-model="c.enabled"></label>
               <template v-if="c.type === 'strategic'">
-                <num-field label="Their synergies" unit="%" v-model="c.synergyPct"></num-field>
-                <num-field label="Financing limit" unit="EURm" v-model="c.financingLimit"></num-field>
+                <num-field label="Their synergies" unit="%" v-model="c.synergyPct" hint="Estimated synergies as % of the target's standalone value, if this rival wins."></num-field>
+                <num-field label="Financing limit" unit="EURm" v-model="c.financingLimit" hint="Maximum this rival can bid given their own financing capacity."></num-field>
               </template>
               <template v-else>
-                <num-field label="Target IRR" unit="%" v-model="c.targetIrr"></num-field>
-                <num-field label="Leverage" unit="x" v-model="c.leverage"></num-field>
-                <num-field label="Exit multiple" unit="x" v-model="c.exitMultiple"></num-field>
-                <num-field label="EBITDA uplift" unit="%" v-model="c.ebitdaUplift"></num-field>
-                <num-field label="Max equity" unit="EURm" v-model="c.maxEquity"></num-field>
+                <num-field label="Target IRR" unit="%" v-model="c.targetIrr" hint="Return this sponsor needs on equity. Higher IRR means a lower reservation price."></num-field>
+                <num-field label="Leverage" unit="x" v-model="c.leverage" hint="Debt as a multiple of EBITDA the sponsor can raise. Drives their reservation price."></num-field>
+                <num-field label="Exit multiple" unit="x" v-model="c.exitMultiple" hint="EV/EBITDA multiple the sponsor expects to exit at."></num-field>
+                <num-field label="EBITDA uplift" unit="%" v-model="c.ebitdaUplift" hint="Operational EBITDA improvement the sponsor expects during the hold."></num-field>
+                <num-field label="Max equity" unit="EURm" v-model="c.maxEquity" hint="Maximum equity cheque the sponsor can write. With leverage, sets their financing cap."></num-field>
               </template>
-              <num-field label="Valuation noise" unit="%" v-model="c.signalNoise"></num-field>
+              <num-field label="Valuation noise" unit="%" v-model="c.signalNoise" hint="Std dev of the rival's valuation signal. Higher means more variance in their bid."></num-field>
               <num-field v-if="sc.deal.format === 'sealed'" label="Bid / own value" unit="%" v-model="c.shading" :hint="sc.sim.adaptive ? 'Starting point; adaptive rivals find their own level' : 'Bid shading'"></num-field>
-              <num-field label="Fever probability" unit="%" v-model="c.feverProb"></num-field>
+              <num-field label="Fever probability" unit="%" v-model="c.feverProb" hint="Chance the rival loses discipline and bids above their own valuation."></num-field>
               <num-field label="Observed bid" unit="EURm" :model-value="c.observedBid" @update:model-value="v => c.observedBid = v" :allow-empty="true" placeholder="optional"></num-field>
               <button class="btn ghost sm danger" @click="sc.competitors.splice(i, 1)">Remove</button>
             </div>
@@ -108,9 +108,9 @@
 
         <details class="grp">
           <summary>Simulation</summary>
-          <num-field label="Simulated auctions" v-model="sc.sim.runs" :min="500" :max="50000" :step="500"></num-field>
+          <num-field label="Simulated auctions" v-model="sc.sim.runs" :min="500" :max="50000" :step="500" unit="auctions" hint="Number of randomised auction outcomes. 10,000 runs in about a second; 50,000 reduces noise."></num-field>
           <label class="sw"><span>Fresh random seed each run</span><input type="checkbox" v-model="sc.sim.randomSeed"></label>
-          <num-field v-if="!sc.sim.randomSeed" label="Fixed seed" v-model="sc.sim.seed" :min="0" hint="20261030 reproduces the sample case in the deck"></num-field>
+          <num-field v-if="!sc.sim.randomSeed" label="Fixed seed" v-model="sc.sim.seed" :min="0" hint="20261030 reproduces the sample case in the deck" unit="seed"></num-field>
           <label class="sw"><span>Rerun when inputs change</span><input type="checkbox" v-model="autoRun"></label>
           <button class="btn ghost sm" @click="runStress" :disabled="!online || running || !result" title="Reruns this case with more aggressive rivals (more auction fever, bigger premiums, less bid shading) and logs it as a scenario. It never sets the recommendation.">Run stress test</button>
         </details>
